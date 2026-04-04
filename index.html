@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise — Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo">▪ SpendWise</span>
+        <span class="version">v1.0.0</span>
+        <button class="btn-import-csv" id="importCsvBtn" title="Import CSV">⬆ IMPORT CSV</button>
+        <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" hidden>
+      </div>
+      <div class="topbar-right">
+        <div class="stat-cluster">
+          <div class="stat-block">
+            <span class="stat-label">TOTAL</span>
+            <span class="stat-value" id="totalSpent">$0.00</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">COUNT</span>
+            <span class="stat-value" id="totalCount">0</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">AVG</span>
+            <span class="stat-value" id="avgSpent">$0.00</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">LARGEST</span>
+            <span class="stat-value" id="maxSpent">$0.00</span>
+          </div>
+        </div>
+        <div class="filter-controls">
+          <select id="monthFilter">
+            <option value="all">ALL PERIODS</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- Left Panel: Input + Category Breakdown -->
+      <aside class="sidebar">
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">+ NEW RECORD</span>
+          </div>
+          <form id="transactionForm" class="entry-form">
+            <div class="field">
+              <label for="description">DESC</label>
+              <input type="text" id="description" placeholder="transaction label" required spellcheck="false">
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="amount">AMT</label>
+                <div class="amount-input-wrap">
+                  <button type="button" class="amt-btn amt-minus" id="amtMinus">−</button>
+                  <input type="number" id="amount" placeholder="0.00" step="0.01" min="0.01" required>
+                  <button type="button" class="amt-btn amt-plus" id="amtPlus">+</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="date">DATE</label>
+                <input type="date" id="date" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="category">CAT</label>
+              <select id="category" required>
+                <option value="" disabled selected>— select —</option>
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Bills & Utilities">Bills & Utilities</option>
+                <option value="Health">Health</option>
+                <option value="Education">Education</option>
+                <option value="Travel">Travel</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-submit">INSERT ↵</button>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">CATEGORY BREAKDOWN</span>
+            <span class="panel-badge" id="catCount">0</span>
+          </div>
+          <div id="categoryTable" class="category-table">
+            <div class="empty-msg">No data.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">DISTRIBUTION</span>
+          </div>
+          <div class="pie-chart-wrap">
+            <svg id="pieChart" viewBox="0 0 200 200" class="pie-chart"></svg>
+            <div id="pieCenter" class="pie-center">
+              <span class="pie-center-label">TOTAL</span>
+              <span class="pie-center-value" id="pieCenterValue">$0</span>
+            </div>
+          </div>
+          <div id="pieLegend" class="pie-legend"></div>
+        </div>
+
+      </aside>
+
+      <!-- Main: Transaction Table -->
+      <main class="main-panel">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">TRANSACTION LOG</span>
+            <div class="table-controls">
+              <select id="categoryFilter">
+                <option value="all">ALL CATEGORIES</option>
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Bills & Utilities">Bills & Utilities</option>
+                <option value="Health">Health</option>
+                <option value="Education">Education</option>
+                <option value="Travel">Travel</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="row-count" id="rowCount">0 rows</span>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="transactionTable">
+              <thead>
+                <tr>
+                  <th class="col-id">ID</th>
+                  <th class="col-date col-sortable" data-sort="date">DATE <span class="sort-icon" id="sort-date">▼</span></th>
+                  <th class="col-cat col-sortable" data-sort="category">CATEGORY <span class="sort-icon" id="sort-category"></span></th>
+                  <th class="col-desc col-sortable" data-sort="description">DESCRIPTION <span class="sort-icon" id="sort-description"></span></th>
+                  <th class="col-amt col-sortable" data-sort="amount">AMOUNT <span class="sort-icon" id="sort-amount"></span></th>
+                  <th class="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody id="transactionBody">
+                <tr class="empty-row">
+                  <td colspan="6" class="empty-msg">No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+    <footer class="statusbar">
+      <span class="status-left" id="statusMsg">READY</span>
+      <span class="status-right" id="statusTime"></span>
+    </footer>
+
+  </div>
+
+  <!-- Edit Transaction Modal -->
+  <div id="editModal" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">EDIT RECORD</span>
+        <button class="modal-close" id="editModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <span class="modal-file-meta" id="editId"></span>
+        </div>
+        <form id="editForm" class="entry-form">
+          <div class="field">
+            <label for="editDesc">DESC</label>
+            <input type="text" id="editDesc" required spellcheck="false">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="editAmount">AMT</label>
+              <input type="number" id="editAmount" step="0.01" min="0.01" required>
+            </div>
+            <div class="field">
+              <label for="editDate">DATE</label>
+              <input type="date" id="editDate" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="editCategory">CAT</label>
+            <select id="editCategory" required>
+              <option value="Food & Dining">Food & Dining</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Bills & Utilities">Bills & Utilities</option>
+              <option value="Health">Health</option>
+              <option value="Education">Education</option>
+              <option value="Travel">Travel</option>
+              <option value="Personal Care">Personal Care</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-modal-secondary" id="editCancel">CANCEL</button>
+            <button type="submit" class="btn-modal-primary">SAVE CHANGES</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Import Modal -->
+  <div id="csvModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">IMPORT CSV</span>
+        <button class="modal-close" id="csvModalClose">✕</button>
+      </div>
+
+      <!-- Step 1: Mapping -->
+      <div id="csvStep1" class="modal-body">
+        <div class="modal-section">
+          <span class="modal-section-label">FILE</span>
+          <span class="modal-file-name" id="csvFileName">—</span>
+          <span class="modal-file-meta" id="csvFileMeta"></span>
+        </div>
+
+        <div class="modal-section">
+          <span class="modal-section-label">COLUMN MAPPING</span>
+          <p class="modal-hint">Assign each CSV column to a transaction field. Columns marked "skip" will be ignored.</p>
+          <div id="csvMappingTable" class="csv-mapping-table"></div>
+        </div>
+
+        <div class="modal-section">
+          <span class="modal-section-label">UNMAPPED CATEGORIES</span>
+          <p class="modal-hint">CSV values that don't match a SpendWise category. Assign them or they'll default to "Other".</p>
+          <div id="csvCatMapping" class="csv-cat-mapping"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-modal-secondary" id="csvCancel">CANCEL</button>
+          <button class="btn-modal-primary" id="csvPreview">PREVIEW →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Preview -->
+      <div id="csvStep2" class="modal-body hidden">
+        <div class="modal-section">
+          <span class="modal-section-label">PREVIEW</span>
+          <span class="modal-file-meta" id="csvPreviewMeta"></span>
+        </div>
+        <div class="csv-preview-wrap">
+          <table class="data-table csv-preview-table">
+            <thead>
+              <tr>
+                <th>DATE</th>
+                <th>CATEGORY</th>
+                <th>DESCRIPTION</th>
+                <th>AMOUNT</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="csvPreviewBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-modal-secondary" id="csvBack">← BACK</button>
+          <button class="btn-modal-primary" id="csvConfirm">IMPORT <span id="csvImportCount">0</span> RECORDS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js?v=8"></script>
+</body>
+</html>
