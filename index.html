@@ -6,7 +6,7 @@
   <title>SpendWise — Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <div class="app">
@@ -16,26 +16,27 @@
       <div class="topbar-left">
         <span class="logo">▪ SpendWise</span>
         <span class="version">v1.0.0</span>
-        <button class="btn-import-csv" id="importCsvBtn" title="Import CSV">⬆ IMPORT CSV</button>
+        <button class="btn-import-csv" id="importCsvBtn" title="Import CSV">⬆ IMPORT</button>
+        <button class="btn-import-csv" id="exportCsvBtn" title="Export CSV">⬇ EXPORT</button>
         <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" hidden>
       </div>
       <div class="topbar-right">
         <div class="stat-cluster">
           <div class="stat-block">
-            <span class="stat-label">TOTAL</span>
-            <span class="stat-value" id="totalSpent">$0.00</span>
+            <span class="stat-label">EXPENSES</span>
+            <span class="stat-value stat-expense" id="totalExpenses">$0.00</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">INCOME</span>
+            <span class="stat-value stat-income" id="totalIncome">$0.00</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">NET</span>
+            <span class="stat-value" id="netAmount">$0.00</span>
           </div>
           <div class="stat-block">
             <span class="stat-label">COUNT</span>
             <span class="stat-value" id="totalCount">0</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-label">AVG</span>
-            <span class="stat-value" id="avgSpent">$0.00</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-label">LARGEST</span>
-            <span class="stat-value" id="maxSpent">$0.00</span>
           </div>
         </div>
         <div class="filter-controls">
@@ -87,8 +88,16 @@
                 <option value="Education">Education</option>
                 <option value="Travel">Travel</option>
                 <option value="Personal Care">Personal Care</option>
+                <option value="Paycheck / Salary">Paycheck / Salary</option>
                 <option value="Other">Other</option>
               </select>
+            </div>
+            <div class="field">
+              <label>TYPE</label>
+              <div class="type-toggle">
+                <button type="button" class="type-btn active" data-type="expense" id="typeExpense">EXPENSE</button>
+                <button type="button" class="type-btn" data-type="income" id="typeIncome">INCOME</button>
+              </div>
             </div>
             <button type="submit" class="btn-submit">INSERT ↵</button>
           </form>
@@ -118,6 +127,16 @@
           <div id="pieLegend" class="pie-legend"></div>
         </div>
 
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">RECURRING</span>
+            <button class="btn-panel-add" id="addRecurringBtn" title="Add recurring rule">+</button>
+          </div>
+          <div id="recurringList" class="recurring-list">
+            <div class="empty-msg">No recurring rules.</div>
+          </div>
+        </div>
+
       </aside>
 
       <!-- Main: Transaction Table -->
@@ -141,6 +160,7 @@
                 <option value="Education">Education</option>
                 <option value="Travel">Travel</option>
                 <option value="Personal Care">Personal Care</option>
+                <option value="Paycheck / Salary">Paycheck / Salary</option>
                 <option value="Other">Other</option>
               </select>
               <span class="row-count" id="rowCount">0 rows</span>
@@ -175,6 +195,77 @@
       <span class="status-right" id="statusTime"></span>
     </footer>
 
+  </div>
+
+  <!-- Recurring Rule Modal -->
+  <div id="recurringModal" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title" id="recurringModalTitle">ADD RECURRING</span>
+        <button class="modal-close" id="recurringModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="recurringForm" class="entry-form">
+          <div class="field">
+            <label for="recDesc">DESC</label>
+            <input type="text" id="recDesc" placeholder="e.g. Rent, Netflix" required spellcheck="false">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="recAmount">AMT</label>
+              <input type="number" id="recAmount" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+            <div class="field">
+              <label for="recCategory">CAT</label>
+              <select id="recCategory" required>
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Bills & Utilities" selected>Bills & Utilities</option>
+                <option value="Health">Health</option>
+                <option value="Education">Education</option>
+                <option value="Travel">Travel</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Paycheck / Salary">Paycheck / Salary</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="recFrequency">FREQ</label>
+              <select id="recFrequency" required>
+                <option value="monthly">Monthly</option>
+                <option value="biweekly">Every 2 Weeks</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="recDay">DAY</label>
+              <input type="number" id="recDay" min="1" max="31" placeholder="1" required>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="recStart">START DATE</label>
+              <input type="date" id="recStart" required>
+            </div>
+            <div class="field">
+              <label>TYPE</label>
+              <div class="type-toggle">
+                <button type="button" class="type-btn active" data-type="expense" id="recTypeExpense">EXPENSE</button>
+                <button type="button" class="type-btn" data-type="income" id="recTypeIncome">INCOME</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-modal-secondary" id="recurringCancel">CANCEL</button>
+            <button type="submit" class="btn-modal-primary" id="recSubmitBtn">ADD RULE</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Edit Transaction Modal -->
@@ -215,8 +306,16 @@
               <option value="Education">Education</option>
               <option value="Travel">Travel</option>
               <option value="Personal Care">Personal Care</option>
+                <option value="Paycheck / Salary">Paycheck / Salary</option>
               <option value="Other">Other</option>
             </select>
+          </div>
+          <div class="field">
+            <label>TYPE</label>
+            <div class="type-toggle">
+              <button type="button" class="type-btn active" data-type="expense" id="editTypeExpense">EXPENSE</button>
+              <button type="button" class="type-btn" data-type="income" id="editTypeIncome">INCOME</button>
+            </div>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-modal-secondary" id="editCancel">CANCEL</button>
@@ -292,6 +391,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

@@ -9,6 +9,7 @@ const CATEGORIES = {
   'Education':         { color: '#6cb6ff' },
   'Travel':            { color: '#39d2c0' },
   'Personal Care':     { color: '#db6d28' },
+  'Paycheck / Salary': { color: '#7ee787' },
   'Other':             { color: '#8b949e' },
 };
 
@@ -21,10 +22,10 @@ const descInput = document.getElementById('description');
 const amountInput = document.getElementById('amount');
 const categoryInput = document.getElementById('category');
 const dateInput = document.getElementById('date');
-const totalSpentEl = document.getElementById('totalSpent');
+const totalExpensesEl = document.getElementById('totalExpenses');
+const totalIncomeEl = document.getElementById('totalIncome');
+const netAmountEl = document.getElementById('netAmount');
 const totalCountEl = document.getElementById('totalCount');
-const avgSpentEl = document.getElementById('avgSpent');
-const maxSpentEl = document.getElementById('maxSpent');
 const catCountEl = document.getElementById('catCount');
 const categoryTableEl = document.getElementById('categoryTable');
 const transactionBodyEl = document.getElementById('transactionBody');
@@ -40,6 +41,11 @@ const pieCenterValueEl = document.getElementById('pieCenterValue');
 const pieLegendEl = document.getElementById('pieLegend');
 const amtMinusBtn = document.getElementById('amtMinus');
 const amtPlusBtn = document.getElementById('amtPlus');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const typeExpenseBtn = document.getElementById('typeExpense');
+const typeIncomeBtn = document.getElementById('typeIncome');
+const editTypeExpenseBtn = document.getElementById('editTypeExpense');
+const editTypeIncomeBtn = document.getElementById('editTypeIncome');
 const importCsvBtn = document.getElementById('importCsvBtn');
 const csvFileInput = document.getElementById('csvFileInput');
 const csvModal = document.getElementById('csvModal');
@@ -66,6 +72,22 @@ const editDateInput = document.getElementById('editDate');
 const editCategoryInput = document.getElementById('editCategory');
 const editIdEl = document.getElementById('editId');
 const editCancelBtn = document.getElementById('editCancel');
+const addRecurringBtn = document.getElementById('addRecurringBtn');
+const recurringListEl = document.getElementById('recurringList');
+const recurringModal = document.getElementById('recurringModal');
+const recurringModalTitle = document.getElementById('recurringModalTitle');
+const recurringModalClose = document.getElementById('recurringModalClose');
+const recurringForm = document.getElementById('recurringForm');
+const recDescInput = document.getElementById('recDesc');
+const recAmountInput = document.getElementById('recAmount');
+const recCategoryInput = document.getElementById('recCategory');
+const recFrequencyInput = document.getElementById('recFrequency');
+const recDayInput = document.getElementById('recDay');
+const recStartInput = document.getElementById('recStart');
+const recurringCancelBtn = document.getElementById('recurringCancel');
+const recSubmitBtn = document.getElementById('recSubmitBtn');
+const recTypeExpenseBtn = document.getElementById('recTypeExpense');
+const recTypeIncomeBtn = document.getElementById('recTypeIncome');
 
 // ========== CSV State ==========
 let csvParsedRows = [];
@@ -74,8 +96,13 @@ let csvColumnMappings = {};   // colIndex -> field name
 let csvCategoryMap = {};       // original value -> SpendWise category
 let csvMappedTransactions = [];
 let editingTransactionId = null;
+let currentType = 'expense';
+let editType = 'expense';
 let sortColumn = 'date';
 let sortDirection = 'desc';
+let recurringRules = [];
+let editingRecurringId = null;
+let recType = 'expense';
 
 // ========== API Helpers ==========
 async function apiGet() {
@@ -104,13 +131,53 @@ async function apiDelete(id) {
   return res.json();
 }
 
+// ========== Recurring API ==========
+async function apiGetRecurring() {
+  const res = await fetch('/api/recurring');
+  if (!res.ok) throw new Error('Failed to load recurring');
+  return res.json();
+}
+
+async function apiSaveRecurring(rule) {
+  const res = await fetch('/api/recurring', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rule),
+  });
+  if (!res.ok) throw new Error('Failed to save recurring');
+  return res.json();
+}
+
+async function apiUpdateRecurring(rule) {
+  const res = await fetch('/api/recurring/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rule),
+  });
+  if (!res.ok) throw new Error('Failed to update recurring');
+  return res.json();
+}
+
+async function apiDeleteRecurring(id) {
+  const res = await fetch('/api/recurring/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  if (!res.ok) throw new Error('Failed to delete recurring');
+  return res.json();
+}
+
 // ========== Init ==========
 async function init() {
   dateInput.value = today();
 
   try {
     transactions = await apiGet();
-    setStatus(`Loaded ${transactions.length} record${transactions.length !== 1 ? 's' : ''} from disk`);
+    recurringRules = await apiGetRecurring();
+    const generated = await autoGenerateRecurring();
+    const loadMsg = `Loaded ${transactions.length} record${transactions.length !== 1 ? 's' : ''}`;
+    setStatus(generated > 0 ? `${loadMsg} + ${generated} recurring` : loadMsg);
   } catch (err) {
     setStatus('ERROR: Could not reach server');
     console.error(err);
@@ -118,6 +185,7 @@ async function init() {
 
   populateMonthFilter();
   render();
+  renderRecurringList();
   updateSortIndicators();
 
   form.addEventListener('submit', handleAddTransaction);
@@ -140,6 +208,17 @@ async function init() {
   amtMinusBtn.addEventListener('click', () => stepAmount(-1));
   amtPlusBtn.addEventListener('click', () => stepAmount(1));
 
+  // Type toggle (add form)
+  typeExpenseBtn.addEventListener('click', () => setType('expense'));
+  typeIncomeBtn.addEventListener('click', () => setType('income'));
+
+  // Type toggle (edit form)
+  editTypeExpenseBtn.addEventListener('click', () => setEditType('expense'));
+  editTypeIncomeBtn.addEventListener('click', () => setEditType('income'));
+
+  // Export CSV
+  exportCsvBtn.addEventListener('click', handleExportCsv);
+
   // CSV import
   importCsvBtn.addEventListener('click', () => csvFileInput.click());
   csvFileInput.addEventListener('change', handleCsvFile);
@@ -155,6 +234,16 @@ async function init() {
   editCancelBtn.addEventListener('click', closeEditModal);
   editForm.addEventListener('submit', handleSaveEdit);
   editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
+
+  // Recurring modal
+  addRecurringBtn.addEventListener('click', openAddRecurring);
+  recurringModalClose.addEventListener('click', closeRecurringModal);
+  recurringCancelBtn.addEventListener('click', closeRecurringModal);
+  recurringForm.addEventListener('submit', handleSaveRecurring);
+  recurringModal.addEventListener('click', (e) => { if (e.target === recurringModal) closeRecurringModal(); });
+  recFrequencyInput.addEventListener('change', updateDayLabel);
+  recTypeExpenseBtn.addEventListener('click', () => setRecType('expense'));
+  recTypeIncomeBtn.addEventListener('click', () => setRecType('income'));
 
   // Sortable columns
   document.querySelectorAll('.col-sortable').forEach(th => {
@@ -184,6 +273,25 @@ function stepAmount(dir) {
   amountInput.focus();
 }
 
+// ========== Type Toggle ==========
+function setType(type) {
+  currentType = type;
+  typeExpenseBtn.classList.toggle('active', type === 'expense');
+  typeIncomeBtn.classList.toggle('active', type === 'income');
+}
+
+function setEditType(type) {
+  editType = type;
+  editTypeExpenseBtn.classList.toggle('active', type === 'expense');
+  editTypeIncomeBtn.classList.toggle('active', type === 'income');
+}
+
+function setRecType(type) {
+  recType = type;
+  recTypeExpenseBtn.classList.toggle('active', type === 'expense');
+  recTypeIncomeBtn.classList.toggle('active', type === 'income');
+}
+
 // ========== Add Transaction ==========
 async function handleAddTransaction(e) {
   e.preventDefault();
@@ -194,6 +302,7 @@ async function handleAddTransaction(e) {
     amount: parseFloat(parseFloat(amountInput.value).toFixed(2)),
     category: categoryInput.value,
     date: dateInput.value,
+    type: currentType,
   };
 
   try {
@@ -211,6 +320,7 @@ async function handleAddTransaction(e) {
 
   form.reset();
   dateInput.value = today();
+  setType('expense');
   descInput.focus();
 }
 
@@ -284,14 +394,14 @@ function syncCategoryHighlights() {
   });
   // Update pie center text
   if (val !== 'all') {
-    const filtered = getFullyFiltered();
+    const filtered = getFullyFiltered().filter(t => (t.type || 'expense') === 'expense');
     const total = filtered.reduce((sum, t) => sum + t.amount, 0);
     document.querySelector('.pie-center-label').textContent = val.toUpperCase().slice(0, 12);
     pieCenterValueEl.textContent = formatCurrency(total);
   } else {
-    const filtered = getFilteredByMonth();
+    const filtered = getFilteredByMonth().filter(t => (t.type || 'expense') === 'expense');
     const total = filtered.reduce((sum, t) => sum + t.amount, 0);
-    document.querySelector('.pie-center-label').textContent = 'TOTAL';
+    document.querySelector('.pie-center-label').textContent = 'EXPENSES';
     pieCenterValueEl.textContent = formatCurrency(total);
   }
 }
@@ -299,22 +409,24 @@ function syncCategoryHighlights() {
 // ========== Stats ==========
 function updateStats() {
   const filtered = getFullyFiltered();
-  const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+  const expenses = filtered.filter(t => (t.type || 'expense') === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const income = filtered.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const net = income - expenses;
   const count = filtered.length;
-  const avg = count > 0 ? total / count : 0;
-  const max = count > 0 ? Math.max(...filtered.map(t => t.amount)) : 0;
 
-  totalSpentEl.textContent = formatCurrency(total);
+  totalExpensesEl.textContent = formatCurrency(expenses);
+  totalIncomeEl.textContent = formatCurrency(income);
+  netAmountEl.textContent = (net >= 0 ? '+' : '-') + formatCurrency(Math.abs(net));
+  netAmountEl.className = 'stat-value ' + (net >= 0 ? 'stat-net-pos' : 'stat-net-neg');
   totalCountEl.textContent = count;
-  avgSpentEl.textContent = formatCurrency(avg);
-  maxSpentEl.textContent = formatCurrency(max);
 }
 
 // ========== Render ==========
 function render() {
   const monthFiltered = getFilteredByMonth();
-  renderCategoryBreakdown(monthFiltered);
-  renderPieChart(monthFiltered);
+  const expensesOnly = monthFiltered.filter(t => (t.type || 'expense') === 'expense');
+  renderCategoryBreakdown(expensesOnly);
+  renderPieChart(expensesOnly);
   renderTransactionTable();
   updateStats();
 }
@@ -514,13 +626,16 @@ function renderTransactionTable() {
     const desc = query ? highlightMatch(escapeHtml(t.description), query) : escapeHtml(t.description);
     const cat = query ? highlightMatch(t.category, query) : t.category;
     const date = query ? highlightMatch(t.date, query) : t.date;
+    const isIncome = t.type === 'income';
+    const amtClass = isIncome ? 'cell-amt-income' : 'cell-amt';
+    const amtPrefix = isIncome ? '+' : '-';
     return `
       <tr>
         <td class="cell-id">${t.id.slice(0, 8)}</td>
         <td class="cell-date">${date}</td>
         <td><span class="cell-cat"><span class="cell-cat-dot" style="background:${color}"></span>${cat}</span></td>
         <td class="cell-desc">${desc}</td>
-        <td class="cell-amt">-${formatCurrency(t.amount)}</td>
+        <td class="${amtClass}">${amtPrefix}${formatCurrency(t.amount)}</td>
         <td><div class="cell-actions"><button class="btn-edit" onclick="editTransaction('${t.id}')" title="Edit">✎</button><button class="btn-delete" onclick="deleteTransaction('${t.id}')" title="Delete">✕</button></div></td>
       </tr>`;
   }).join('');
@@ -587,6 +702,280 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
 }
 
+// ========== Recurring Transactions ==========
+function getNextDate(rule) {
+  const now = today();
+  const start = rule.startDate;
+  const lastGen = rule.lastGenerated || null;
+
+  if (rule.frequency === 'monthly') {
+    const day = Math.min(rule.day, 28);
+    // Find next occurrence from today
+    const nowD = new Date(now + 'T00:00:00');
+    let y = nowD.getFullYear(), m = nowD.getMonth();
+    let candidate = new Date(y, m, day);
+    if (candidate <= nowD) {
+      m++;
+      if (m > 11) { m = 0; y++; }
+      candidate = new Date(y, m, day);
+    }
+    return candidate.toISOString().split('T')[0];
+  }
+
+  if (rule.frequency === 'weekly' || rule.frequency === 'biweekly') {
+    const interval = rule.frequency === 'weekly' ? 7 : 14;
+    const startD = new Date(start + 'T00:00:00');
+    const nowD = new Date(now + 'T00:00:00');
+    const diff = Math.floor((nowD - startD) / 86400000);
+    const remainder = ((diff % interval) + interval) % interval;
+    const daysUntil = remainder === 0 ? interval : interval - remainder;
+    const next = new Date(nowD);
+    next.setDate(next.getDate() + daysUntil);
+    return next.toISOString().split('T')[0];
+  }
+
+  return now;
+}
+
+function getDueDates(rule) {
+  const todayStr = today();
+  const todayD = new Date(todayStr + 'T00:00:00');
+  const startD = new Date(rule.startDate + 'T00:00:00');
+  const lastGenD = rule.lastGenerated ? new Date(rule.lastGenerated + 'T00:00:00') : null;
+  const dates = [];
+
+  if (rule.frequency === 'monthly') {
+    const day = Math.min(rule.day, 28);
+    let y = startD.getFullYear(), m = startD.getMonth();
+    // If start day > day, start from next month
+    if (startD.getDate() > day) { m++; if (m > 11) { m = 0; y++; } }
+
+    for (let i = 0; i < 120; i++) { // safety cap
+      const d = new Date(y, m, day);
+      if (d > todayD) break;
+      if (d >= startD && (!lastGenD || d > lastGenD)) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+  } else {
+    const interval = rule.frequency === 'weekly' ? 7 : 14;
+    const d = new Date(startD);
+    for (let i = 0; i < 500; i++) { // safety cap
+      if (d > todayD) break;
+      if (!lastGenD || d > lastGenD) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+      d.setDate(d.getDate() + interval);
+    }
+  }
+
+  return dates;
+}
+
+async function autoGenerateRecurring() {
+  let totalGenerated = 0;
+  const allNew = [];
+  const updatedRules = [];
+
+  for (const rule of recurringRules) {
+    const dates = getDueDates(rule);
+    if (dates.length === 0) continue;
+
+    dates.forEach((date, i) => {
+      allNew.push({
+        id: 'rec' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i.toString(36),
+        description: rule.description,
+        amount: rule.amount,
+        category: rule.category,
+        date,
+        type: rule.type || 'expense',
+      });
+    });
+
+    rule.lastGenerated = dates[dates.length - 1];
+    updatedRules.push(rule);
+    totalGenerated += dates.length;
+  }
+
+  if (allNew.length > 0) {
+    try {
+      await fetch('/api/transactions/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(allNew),
+      });
+      transactions = await apiGet();
+
+      for (const rule of updatedRules) {
+        await apiUpdateRecurring(rule);
+      }
+    } catch (err) {
+      console.error('Auto-generate failed:', err);
+    }
+  }
+
+  return totalGenerated;
+}
+
+function renderRecurringList() {
+  if (recurringRules.length === 0) {
+    recurringListEl.innerHTML = '<div class="empty-msg">No recurring rules.</div>';
+    return;
+  }
+
+  const freqLabels = { monthly: 'MO', biweekly: '2W', weekly: 'WK' };
+
+  recurringListEl.innerHTML = recurringRules.map(r => {
+    const freq = freqLabels[r.frequency] || r.frequency;
+    const next = getNextDate(r);
+    const isIncome = r.type === 'income';
+    const amtClass = isIncome ? 'rec-amount-income' : 'rec-amount';
+    const amtPrefix = isIncome ? '+' : '-';
+    return `
+      <div class="rec-row" data-id="${r.id}">
+        <div class="rec-info" onclick="openEditRecurring('${r.id}')">
+          <div class="rec-desc">${escapeHtml(r.description)}</div>
+          <div class="rec-meta">
+            <span class="rec-freq-badge">${freq}</span>
+            <span class="rec-next">next: ${next}</span>
+          </div>
+        </div>
+        <span class="${amtClass}">${amtPrefix}${formatCurrency(r.amount)}</span>
+        <div class="rec-actions">
+          <button class="rec-delete" onclick="deleteRecurring('${r.id}')" title="Delete rule">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openAddRecurring() {
+  editingRecurringId = null;
+  recurringModalTitle.textContent = 'ADD RECURRING';
+  recSubmitBtn.textContent = 'ADD RULE';
+  recurringForm.reset();
+  recStartInput.value = today();
+  recDayInput.value = new Date().getDate();
+  setRecType('expense');
+  updateDayLabel();
+  recurringModal.classList.remove('hidden');
+  recDescInput.focus();
+}
+
+function openEditRecurring(id) {
+  const rule = recurringRules.find(r => r.id === id);
+  if (!rule) return;
+
+  editingRecurringId = id;
+  recurringModalTitle.textContent = 'EDIT RECURRING';
+  recSubmitBtn.textContent = 'SAVE CHANGES';
+  recDescInput.value = rule.description;
+  recAmountInput.value = rule.amount;
+  recCategoryInput.value = rule.category;
+  recFrequencyInput.value = rule.frequency;
+  recDayInput.value = rule.day;
+  recStartInput.value = rule.startDate;
+  setRecType(rule.type || 'expense');
+  updateDayLabel();
+  recurringModal.classList.remove('hidden');
+  recDescInput.focus();
+}
+
+async function handleSaveRecurring(e) {
+  e.preventDefault();
+
+  const rule = {
+    id: editingRecurringId || Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    description: recDescInput.value.trim(),
+    amount: parseFloat(parseFloat(recAmountInput.value).toFixed(2)),
+    category: recCategoryInput.value,
+    frequency: recFrequencyInput.value,
+    day: parseInt(recDayInput.value),
+    startDate: recStartInput.value,
+    type: recType,
+    lastGenerated: null,
+  };
+
+  try {
+    if (editingRecurringId) {
+      const existing = recurringRules.find(r => r.id === editingRecurringId);
+      if (existing) rule.lastGenerated = existing.lastGenerated;
+      await apiUpdateRecurring(rule);
+      const idx = recurringRules.findIndex(r => r.id === editingRecurringId);
+      if (idx !== -1) recurringRules[idx] = rule;
+      setStatus(`UPDATE RECURRING → ${escapeHtml(rule.description)}`);
+      showToast('Recurring rule updated');
+    } else {
+      await apiSaveRecurring(rule);
+      recurringRules.push(rule);
+
+      // Auto-generate any due transactions for the new rule
+      const dates = getDueDates(rule);
+      if (dates.length > 0) {
+        const newTxns = dates.map((date, i) => ({
+          id: 'rec' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i.toString(36),
+          description: rule.description,
+          amount: rule.amount,
+          category: rule.category,
+          date,
+          type: rule.type || 'expense',
+        }));
+        await fetch('/api/transactions/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTxns),
+        });
+        rule.lastGenerated = dates[dates.length - 1];
+        await apiUpdateRecurring(rule);
+        transactions = await apiGet();
+        populateMonthFilter();
+        render();
+        showToast(`Added rule + ${dates.length} past transaction${dates.length !== 1 ? 's' : ''}`);
+      } else {
+        showToast('Recurring rule added');
+      }
+      setStatus(`ADD RECURRING → ${escapeHtml(rule.description)} (${rule.frequency})`);
+    }
+
+    closeRecurringModal();
+    renderRecurringList();
+  } catch (err) {
+    showToast('Failed — check server');
+    console.error(err);
+  }
+}
+
+async function deleteRecurring(id) {
+  try {
+    await apiDeleteRecurring(id);
+    recurringRules = recurringRules.filter(r => r.id !== id);
+    renderRecurringList();
+    setStatus(`DELETE RECURRING → ${id}`);
+    showToast('Recurring rule deleted');
+  } catch (err) {
+    showToast('Delete failed — check server');
+    console.error(err);
+  }
+}
+
+function closeRecurringModal() {
+  recurringModal.classList.add('hidden');
+  editingRecurringId = null;
+}
+
+function updateDayLabel() {
+  const label = recDayInput.previousElementSibling;
+  if (recFrequencyInput.value === 'monthly') {
+    label.textContent = 'DAY OF MONTH';
+    recDayInput.max = 31;
+    recDayInput.placeholder = '1';
+  } else {
+    label.textContent = 'DAY (unused)';
+    recDayInput.max = 31;
+  }
+}
+
 // ========== Edit Transaction ==========
 function editTransaction(id) {
   const t = transactions.find(tx => tx.id === id);
@@ -598,6 +987,7 @@ function editTransaction(id) {
   editAmountInput.value = t.amount;
   editDateInput.value = t.date;
   editCategoryInput.value = t.category;
+  setEditType(t.type || 'expense');
 
   editModal.classList.remove('hidden');
   editDescInput.focus();
@@ -613,6 +1003,7 @@ async function handleSaveEdit(e) {
     amount: parseFloat(parseFloat(editAmountInput.value).toFixed(2)),
     category: editCategoryInput.value,
     date: editDateInput.value,
+    type: editType,
   };
 
   try {
@@ -641,6 +1032,56 @@ async function handleSaveEdit(e) {
 function closeEditModal() {
   editModal.classList.add('hidden');
   editingTransactionId = null;
+}
+
+// ========== Export CSV ==========
+function handleExportCsv() {
+  const filtered = getFullyFiltered();
+
+  // Apply search filter too
+  const query = searchInput.value.trim().toLowerCase();
+  let data = filtered;
+  if (query) {
+    data = data.filter(t =>
+      t.description.toLowerCase().includes(query) ||
+      t.category.toLowerCase().includes(query) ||
+      t.date.includes(query) ||
+      formatCurrency(t.amount).includes(query)
+    );
+  }
+
+  if (data.length === 0) {
+    showToast('No records to export');
+    return;
+  }
+
+  const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
+
+  const headers = ['Date', 'Type', 'Category', 'Description', 'Amount'];
+  const rows = sorted.map(t => {
+    const type = t.type || 'expense';
+    return [
+      t.date,
+      type,
+      '"' + t.category.replace(/"/g, '""') + '"',
+      '"' + t.description.replace(/"/g, '""') + '"',
+      (type === 'income' ? '' : '-') + t.amount.toFixed(2),
+    ].join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `spendwise_${today()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  setStatus(`EXPORT → ${sorted.length} records`);
+  showToast(`Exported ${sorted.length} records`);
 }
 
 // ========== CSV Import ==========
@@ -859,6 +1300,7 @@ function fuzzyMatchCategory(input) {
     'Education': ['education', 'school', 'tuition', 'book', 'course', 'class', 'training', 'learn'],
     'Travel': ['travel', 'hotel', 'flight', 'airfare', 'vacation', 'trip', 'lodging', 'airline'],
     'Personal Care': ['personal', 'care', 'beauty', 'haircut', 'salon', 'spa', 'grooming', 'hygiene'],
+    'Paycheck / Salary': ['paycheck', 'salary', 'wage', 'income', 'payroll', 'direct deposit', 'compensation', 'bonus'],
   };
 
   for (const [cat, words] of Object.entries(keywords)) {

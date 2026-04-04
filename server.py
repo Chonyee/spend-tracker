@@ -6,10 +6,11 @@ Open:  http://localhost:8000
 
 import json
 import os
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 import webbrowser
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'transactions.json')
+RECURRING_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'recurring.json')
 
 
 def read_data():
@@ -27,11 +28,29 @@ def write_data(data):
         json.dump(data, f, indent=2)
 
 
+def read_recurring():
+    if not os.path.exists(RECURRING_FILE):
+        return []
+    with open(RECURRING_FILE, 'r') as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
+
+
+def write_recurring(data):
+    with open(RECURRING_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
 class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/api/transactions':
             data = read_data()
+            self._json_response(200, data)
+        elif self.path == '/api/recurring':
+            data = read_recurring()
             self._json_response(200, data)
         elif self.path == '/favicon.ico':
             self.send_response(204)
@@ -94,6 +113,49 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             write_data(data)
             self._json_response(200, body)
+
+        elif self.path == '/api/recurring':
+            body = self._read_body()
+            if body is None:
+                return
+            data = read_recurring()
+            data.append(body)
+            write_recurring(data)
+            self._json_response(201, body)
+
+        elif self.path == '/api/recurring/update':
+            body = self._read_body()
+            if body is None:
+                return
+            rid = body.get('id')
+            if not rid:
+                self._json_response(400, {'error': 'Missing id'})
+                return
+            data = read_recurring()
+            updated = False
+            for i, r in enumerate(data):
+                if r.get('id') == rid:
+                    data[i] = body
+                    updated = True
+                    break
+            if not updated:
+                self._json_response(404, {'error': 'Not found'})
+                return
+            write_recurring(data)
+            self._json_response(200, body)
+
+        elif self.path == '/api/recurring/delete':
+            body = self._read_body()
+            if body is None:
+                return
+            rid = body.get('id')
+            if not rid:
+                self._json_response(400, {'error': 'Missing id'})
+                return
+            data = read_recurring()
+            data = [r for r in data if r.get('id') != rid]
+            write_recurring(data)
+            self._json_response(200, {'deleted': rid})
 
         else:
             self._json_response(404, {'error': 'Not found'})
