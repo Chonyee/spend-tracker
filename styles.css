@@ -443,6 +443,50 @@ body {
   gap: 12px;
 }
 
+.search-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 8px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15);
+}
+
+.search-icon {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-right: 4px;
+  line-height: 1;
+}
+
+.search-wrap input {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  outline: none;
+  padding: 5px 2px;
+  width: 160px;
+}
+
+.search-wrap input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-highlight {
+  background: rgba(210, 153, 34, 0.35);
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 .row-count {
   font-size: 11px;
   color: var(--text-muted);

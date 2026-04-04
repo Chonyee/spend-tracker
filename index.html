@@ -6,7 +6,7 @@
   <title>SpendWise — Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <div class="app">
@@ -126,6 +126,10 @@
           <div class="panel-header">
             <span class="panel-title">TRANSACTION LOG</span>
             <div class="table-controls">
+              <div class="search-wrap">
+                <span class="search-icon">⌕</span>
+                <input type="text" id="searchInput" placeholder="Search transactions..." spellcheck="false">
+              </div>
               <select id="categoryFilter">
                 <option value="all">ALL CATEGORIES</option>
                 <option value="Food & Dining">Food & Dining</option>
@@ -288,6 +292,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

@@ -29,6 +29,7 @@ const catCountEl = document.getElementById('catCount');
 const categoryTableEl = document.getElementById('categoryTable');
 const transactionBodyEl = document.getElementById('transactionBody');
 const categoryFilterEl = document.getElementById('categoryFilter');
+const searchInput = document.getElementById('searchInput');
 const monthFilterEl = document.getElementById('monthFilter');
 const rowCountEl = document.getElementById('rowCount');
 const statusMsgEl = document.getElementById('statusMsg');
@@ -126,6 +127,14 @@ async function init() {
     updateStats();
   });
   monthFilterEl.addEventListener('change', render);
+  searchInput.addEventListener('input', renderTransactionTable);
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchInput.value = '';
+      searchInput.blur();
+      renderTransactionTable();
+    }
+  });
 
   // Amount stepper buttons
   amtMinusBtn.addEventListener('click', () => stepAmount(-1));
@@ -457,7 +466,18 @@ function updateSortIndicators() {
 }
 
 function renderTransactionTable() {
-  const filtered = getFullyFiltered();
+  let filtered = getFullyFiltered();
+
+  // Apply search filter
+  const query = searchInput.value.trim().toLowerCase();
+  if (query) {
+    filtered = filtered.filter(t =>
+      t.description.toLowerCase().includes(query) ||
+      t.category.toLowerCase().includes(query) ||
+      t.date.includes(query) ||
+      formatCurrency(t.amount).includes(query)
+    );
+  }
 
   rowCountEl.textContent = `${filtered.length} row${filtered.length !== 1 ? 's' : ''}`;
 
@@ -491,12 +511,15 @@ function renderTransactionTable() {
 
   transactionBodyEl.innerHTML = sorted.map(t => {
     const color = (CATEGORIES[t.category] || CATEGORIES['Other']).color;
+    const desc = query ? highlightMatch(escapeHtml(t.description), query) : escapeHtml(t.description);
+    const cat = query ? highlightMatch(t.category, query) : t.category;
+    const date = query ? highlightMatch(t.date, query) : t.date;
     return `
       <tr>
         <td class="cell-id">${t.id.slice(0, 8)}</td>
-        <td class="cell-date">${t.date}</td>
-        <td><span class="cell-cat"><span class="cell-cat-dot" style="background:${color}"></span>${t.category}</span></td>
-        <td class="cell-desc">${escapeHtml(t.description)}</td>
+        <td class="cell-date">${date}</td>
+        <td><span class="cell-cat"><span class="cell-cat-dot" style="background:${color}"></span>${cat}</span></td>
+        <td class="cell-desc">${desc}</td>
         <td class="cell-amt">-${formatCurrency(t.amount)}</td>
         <td><div class="cell-actions"><button class="btn-edit" onclick="editTransaction('${t.id}')" title="Edit">✎</button><button class="btn-delete" onclick="deleteTransaction('${t.id}')" title="Delete">✕</button></div></td>
       </tr>`;
@@ -544,6 +567,16 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return text;
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + query.length);
+  const after = text.slice(idx + query.length);
+  return `${before}<mark class="search-highlight">${match}</mark>${after}`;
 }
 
 let toastTimer;
