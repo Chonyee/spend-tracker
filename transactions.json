@@ -1,1 +1,254 @@
-[]
+[
+  {
+    "id": "mniet99cbv52z0",
+    "description": "Marvel Rivals BP",
+    "amount": 5,
+    "category": "Entertainment",
+    "date": "2026-03-19"
+  },
+  {
+    "id": "mniet99c4xml41",
+    "description": "Congo River Golf",
+    "amount": 40.44,
+    "category": "Entertainment",
+    "date": "2026-03-01"
+  },
+  {
+    "id": "mniet99cgn7hg2",
+    "description": "Parking Spot",
+    "amount": 36.5,
+    "category": "Travel",
+    "date": "2026-03-02"
+  },
+  {
+    "id": "mniet99cyjbzm3",
+    "description": "Honkai",
+    "amount": 38.31,
+    "category": "Entertainment",
+    "date": "2026-03-10"
+  },
+  {
+    "id": "mniet99cg7rgt4",
+    "description": "big arch product",
+    "amount": 9.73,
+    "category": "Food & Dining",
+    "date": "2026-03-19"
+  },
+  {
+    "id": "mniet99ciea355",
+    "description": "mcd",
+    "amount": 4.7,
+    "category": "Food & Dining",
+    "date": "2026-03-15"
+  },
+  {
+    "id": "mniet99cgbwro6",
+    "description": "mcd",
+    "amount": 4.92,
+    "category": "Food & Dining",
+    "date": "2026-03-12"
+  },
+  {
+    "id": "mniet99cbdr9c7",
+    "description": "chickfila",
+    "amount": 6.31,
+    "category": "Food & Dining",
+    "date": "2026-03-11"
+  },
+  {
+    "id": "mniet99cqkqbz8",
+    "description": "five guys",
+    "amount": 13.07,
+    "category": "Food & Dining",
+    "date": "2026-03-09"
+  },
+  {
+    "id": "mniet99chsnvw9",
+    "description": "target",
+    "amount": 50.14,
+    "category": "Food & Dining",
+    "date": "2026-03-07"
+  },
+  {
+    "id": "mniet99c7omtva",
+    "description": "costco",
+    "amount": 9.36,
+    "category": "Food & Dining",
+    "date": "2026-03-07"
+  },
+  {
+    "id": "mniet99cx1kqeb",
+    "description": "chickfila",
+    "amount": 12.62,
+    "category": "Food & Dining",
+    "date": "2026-03-06"
+  },
+  {
+    "id": "mniet99c857cgc",
+    "description": "Publix",
+    "amount": 20.31,
+    "category": "Food & Dining",
+    "date": "2026-03-01"
+  },
+  {
+    "id": "mniet99c5xkgld",
+    "description": "Mercy",
+    "amount": 10,
+    "category": "Health",
+    "date": "2026-03-19"
+  },
+  {
+    "id": "mniet99cmuhg6e",
+    "description": "Spotify",
+    "amount": 6.99,
+    "category": "Entertainment",
+    "date": "2026-03-13"
+  },
+  {
+    "id": "mniet99cm2ggof",
+    "description": "ari food",
+    "amount": 35,
+    "category": "Food & Dining",
+    "date": "2026-03-12"
+  },
+  {
+    "id": "mniet99clsbvsg",
+    "description": "Discord",
+    "amount": 5.99,
+    "category": "Entertainment",
+    "date": "2026-03-03"
+  },
+  {
+    "id": "mniet99cxa1ceh",
+    "description": "Honkai",
+    "amount": 42.78,
+    "category": "Entertainment",
+    "date": "2026-03-22"
+  },
+  {
+    "id": "mniet99cv4oeni",
+    "description": "Claude",
+    "amount": 20,
+    "category": "Personal Care",
+    "date": "2026-03-21"
+  },
+  {
+    "id": "mniet99c8eyvbj",
+    "description": "Slay the spire 2",
+    "amount": 24.98,
+    "category": "Entertainment",
+    "date": "2026-03-21"
+  },
+  {
+    "id": "mniet99cs2ai2k",
+    "description": "Culvers",
+    "amount": 15.96,
+    "category": "Entertainment",
+    "date": "2026-03-19"
+  },
+  {
+    "id": "mniet99cp3d2ol",
+    "description": "thc",
+    "amount": 20,
+    "category": "Entertainment",
+    "date": "2026-03-22"
+  },
+  {
+    "id": "mniet99chmf25m",
+    "description": "capital one travel card fee",
+    "amount": 95,
+    "category": "Entertainment",
+    "date": "2026-03-26"
+  },
+  {
+    "id": "mniet99cs865dn",
+    "description": "beso resort",
+    "amount": 372.9,
+    "category": "Travel",
+    "date": "2026-03-22"
+  },
+  {
+    "id": "mniet99c6ovplo",
+    "description": "valve $5",
+    "amount": 5,
+    "category": "Entertainment",
+    "date": "2026-03-29"
+  },
+  {
+    "id": "mniet99cgwdgjp",
+    "description": "stl to den may 8 round trip",
+    "amount": 127.96,
+    "category": "Travel",
+    "date": "2026-03-29"
+  },
+  {
+    "id": "mniet99cs3ry7q",
+    "description": "tampa to stl apr 27 one way",
+    "amount": 173.2,
+    "category": "Travel",
+    "date": "2026-03-27"
+  },
+  {
+    "id": "mniet99co5r8rr",
+    "description": "ETB",
+    "amount": 131.37,
+    "category": "Entertainment",
+    "date": "2026-03-27"
+  },
+  {
+    "id": "mniet99cgzokus",
+    "description": "eufy camera",
+    "amount": 75.52,
+    "category": "Personal Care",
+    "date": "2026-03-21"
+  },
+  {
+    "id": "mniet99clrqwut",
+    "description": "valve $5",
+    "amount": 67.06,
+    "category": "Entertainment",
+    "date": "2026-03-25"
+  },
+  {
+    "id": "mniet99c88ln9u",
+    "description": "Mcd",
+    "amount": 4.7,
+    "category": "Food & Dining",
+    "date": "2026-03-27"
+  },
+  {
+    "id": "mniet99cz2x0tv",
+    "description": "chickfila",
+    "amount": 6.31,
+    "category": "Food & Dining",
+    "date": "2026-03-24"
+  },
+  {
+    "id": "mniet99c3ijznw",
+    "description": "Apple icloud",
+    "amount": 2.99,
+    "category": "Personal Care",
+    "date": "2026-03-24"
+  },
+  {
+    "id": "mniet99czcl4hx",
+    "description": "ari airpurifier + food",
+    "amount": 150,
+    "category": "Personal Care",
+    "date": "2026-03-30"
+  },
+  {
+    "id": "mnicy564qri09",
+    "description": "Micro SD Card",
+    "amount": 40,
+    "category": "Shopping",
+    "date": "2026-04-03"
+  },
+  {
+    "id": "mnicxof979gxs",
+    "description": "Whole Foods Salad",
+    "amount": 14,
+    "category": "Food & Dining",
+    "date": "2026-03-31"
+  }
+]

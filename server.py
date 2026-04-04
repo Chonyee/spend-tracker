@@ -7,6 +7,7 @@ Open:  http://localhost:8000
 import json
 import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+import webbrowser
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'transactions.json')
 
@@ -127,6 +128,7 @@ if __name__ == '__main__':
     port = 8000
     server = HTTPServer(('localhost', port), Handler)
     print(f'\n  SpendWise running at http://localhost:{port}\n')
+    webbrowser.open(f'http://localhost:{port}')
     try:
         server.serve_forever()
     except KeyboardInterrupt:
