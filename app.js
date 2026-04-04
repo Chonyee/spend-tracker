@@ -877,8 +877,14 @@ function buildMappedTransactions() {
     if (field !== 'skip') colFor[field] = parseInt(i);
   }
 
+  // Build lookup of existing transactions for duplicate detection
+  const existingKeys = new Set();
+  transactions.forEach(t => {
+    existingKeys.add(`${t.date}|${t.description.toLowerCase()}|${t.amount.toFixed(2)}`);
+  });
+
   const results = [];
-  csvParsedRows.forEach(row => {
+  csvParsedRows.forEach((row, idx) => {
     const rawDesc = colFor.description !== undefined ? (row[colFor.description] || '').trim() : '';
     const rawAmt = colFor.amount !== undefined ? (row[colFor.amount] || '') : '';
     const rawCat = colFor.category !== undefined ? (row[colFor.category] || '').trim() : '';
@@ -900,13 +906,24 @@ function buildMappedTransactions() {
     if (isNaN(amount) || amount === 0) errors.push('invalid amount');
     if (!date) errors.push('invalid date');
 
+    const parsedAmount = isNaN(amount) ? 0 : Math.abs(amount);
+    const parsedDate = date || today();
+    const parsedDesc = rawDesc || '(empty)';
+
+    // Duplicate check
+    const key = `${parsedDate}|${parsedDesc.toLowerCase()}|${parsedAmount.toFixed(2)}`;
+    const isDuplicate = errors.length === 0 && existingKeys.has(key);
+
     results.push({
-      description: rawDesc || '(empty)',
-      amount: isNaN(amount) ? 0 : Math.abs(amount),
+      rowIndex: idx,
+      description: parsedDesc,
+      amount: parsedAmount,
       category,
-      date: date || today(),
+      date: parsedDate,
       errors,
       valid: errors.length === 0,
+      isDuplicate,
+      include: !isDuplicate, // duplicates unchecked by default, others checked
     });
   });
 
@@ -922,18 +939,64 @@ function showCsvPreview() {
   }
 
   csvMappedTransactions = buildMappedTransactions();
+
   const validCount = csvMappedTransactions.filter(t => t.valid).length;
-  const warnCount = csvMappedTransactions.filter(t => !t.valid).length;
+  const dupeCount = csvMappedTransactions.filter(t => t.isDuplicate).length;
+  const errorCount = csvMappedTransactions.filter(t => !t.valid).length;
 
-  csvPreviewMeta.textContent = `${validCount} valid · ${warnCount} with issues · ${csvMappedTransactions.length} total`;
-  csvImportCount.textContent = validCount;
+  let metaParts = [`${validCount} valid`];
+  if (dupeCount > 0) metaParts.push(`${dupeCount} duplicate${dupeCount !== 1 ? 's' : ''}`);
+  if (errorCount > 0) metaParts.push(`${errorCount} with errors`);
+  metaParts.push(`${csvMappedTransactions.length} total`);
+  csvPreviewMeta.textContent = metaParts.join(' · ');
 
-  csvPreviewBody.innerHTML = csvMappedTransactions.slice(0, 100).map(t => {
-    const statusClass = t.valid ? 'csv-status-ok' : 'csv-status-warn';
-    const statusText = t.valid ? '✓ OK' : '⚠ ' + t.errors.join(', ');
+  renderCsvPreviewRows();
+  updateCsvImportCount();
+
+  // Select-all checkbox
+  const selectAll = document.getElementById('csvSelectAll');
+  selectAll.checked = csvMappedTransactions.filter(t => t.valid).every(t => t.include);
+  selectAll.addEventListener('change', () => {
+    const checked = selectAll.checked;
+    csvMappedTransactions.forEach(t => {
+      if (t.valid) t.include = checked;
+    });
+    renderCsvPreviewRows();
+    updateCsvImportCount();
+  });
+
+  csvStep1.classList.add('hidden');
+  csvStep2.classList.remove('hidden');
+}
+
+function renderCsvPreviewRows() {
+  const display = csvMappedTransactions.slice(0, 150);
+
+  csvPreviewBody.innerHTML = display.map((t, i) => {
     const color = (CATEGORIES[t.category] || CATEGORIES['Other']).color;
+
+    let statusClass, statusText;
+    if (!t.valid) {
+      statusClass = 'csv-status-err';
+      statusText = '✗ ' + t.errors.join(', ');
+    } else if (t.isDuplicate) {
+      statusClass = 'csv-status-dupe';
+      statusText = '⚠ duplicate';
+    } else {
+      statusClass = 'csv-status-ok';
+      statusText = '✓ OK';
+    }
+
+    const rowClasses = [];
+    if (t.isDuplicate) rowClasses.push('csv-row-dupe');
+    if (!t.include && t.valid) rowClasses.push('csv-row-excluded');
+
+    const checkboxDisabled = !t.valid ? 'disabled' : '';
+    const checkboxChecked = t.include ? 'checked' : '';
+
     return `
-      <tr>
+      <tr class="${rowClasses.join(' ')}">
+        <td class="csv-include-cell"><input type="checkbox" data-row="${i}" ${checkboxChecked} ${checkboxDisabled}></td>
         <td class="cell-date">${t.date}</td>
         <td><span class="cell-cat"><span class="cell-cat-dot" style="background:${color}"></span>${t.category}</span></td>
         <td class="cell-desc">${escapeHtml(t.description)}</td>
@@ -942,30 +1005,50 @@ function showCsvPreview() {
       </tr>`;
   }).join('');
 
-  if (csvMappedTransactions.length > 100) {
+  if (csvMappedTransactions.length > 150) {
     csvPreviewBody.innerHTML += `
-      <tr><td colspan="5" class="empty-msg">Showing first 100 of ${csvMappedTransactions.length} rows</td></tr>`;
+      <tr><td colspan="6" class="empty-msg">Showing first 150 of ${csvMappedTransactions.length} rows</td></tr>`;
   }
 
-  csvStep1.classList.add('hidden');
-  csvStep2.classList.remove('hidden');
+  // Row checkbox handlers
+  csvPreviewBody.querySelectorAll('input[type="checkbox"][data-row]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.row);
+      csvMappedTransactions[idx].include = cb.checked;
+      // Toggle visual
+      const row = cb.closest('tr');
+      row.classList.toggle('csv-row-excluded', !cb.checked);
+      updateCsvImportCount();
+      // Sync select-all
+      const selectAll = document.getElementById('csvSelectAll');
+      const allValid = csvMappedTransactions.filter(t => t.valid);
+      selectAll.checked = allValid.length > 0 && allValid.every(t => t.include);
+    });
+  });
+}
+
+function updateCsvImportCount() {
+  const count = csvMappedTransactions.filter(t => t.valid && t.include).length;
+  csvImportCount.textContent = count;
 }
 
 async function confirmCsvImport() {
-  const valid = csvMappedTransactions.filter(t => t.valid);
-  if (valid.length === 0) {
-    showToast('No valid records to import');
+  const toImport = csvMappedTransactions.filter(t => t.valid && t.include);
+  if (toImport.length === 0) {
+    showToast('No records selected for import');
     return;
   }
 
   // Generate IDs
-  const toInsert = valid.map((t, i) => ({
+  const toInsert = toImport.map((t, i) => ({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + i.toString(36),
     description: t.description,
     amount: parseFloat(t.amount.toFixed(2)),
     category: t.category,
     date: t.date,
   }));
+
+  const skippedDupes = csvMappedTransactions.filter(t => t.isDuplicate && !t.include).length;
 
   try {
     const res = await fetch('/api/transactions/bulk', {
@@ -982,7 +1065,9 @@ async function confirmCsvImport() {
     render();
 
     closeCsvModal();
-    setStatus(`IMPORT → ${result.added} records added, ${result.skipped} skipped`);
+    let msg = `IMPORT → ${result.added} records added`;
+    if (skippedDupes > 0) msg += `, ${skippedDupes} duplicate${skippedDupes !== 1 ? 's' : ''} skipped`;
+    setStatus(msg);
     showToast(`Imported ${result.added} records`);
   } catch (err) {
     showToast('Import failed — check server');

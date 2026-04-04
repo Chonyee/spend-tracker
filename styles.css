@@ -1069,6 +1069,49 @@ body {
   font-size: 10px;
 }
 
+.csv-status-dupe {
+  color: var(--yellow);
+  font-size: 10px;
+}
+
+.col-csv-include {
+  width: 36px;
+  text-align: center !important;
+}
+
+.col-csv-include input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.csv-include-cell {
+  text-align: center;
+}
+
+.csv-include-cell input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.csv-row-excluded td {
+  opacity: 0.35;
+}
+
+.csv-row-excluded td:first-child {
+  opacity: 1;
+}
+
+.csv-row-dupe {
+  background: rgba(210, 153, 34, 0.06);
+}
+
+.csv-dupe-match {
+  font-size: 9px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
 /* ========== Modal Actions ========== */
 .modal-actions {
   display: flex;
