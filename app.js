@@ -110,83 +110,35 @@ let editingRecurringId = null;
 let recType = 'expense';
 
 // ========== API Helpers ==========
-async function apiGet() {
-  const res = await fetch('/api/transactions');
-  if (!res.ok) throw new Error('Failed to load transactions');
-  return res.json();
+// ========== Storage ==========
+function saveTransactions() {
+  localStorage.setItem('spendwise_transactions', JSON.stringify(transactions));
+  DriveSync.schedulePush();
 }
 
-async function apiAdd(transaction) {
-  const res = await fetch('/api/transactions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(transaction),
-  });
-  if (!res.ok) throw new Error('Failed to save transaction');
-  return res.json();
+function saveRecurring() {
+  localStorage.setItem('spendwise_recurring', JSON.stringify(recurringRules));
+  DriveSync.schedulePush();
 }
 
-async function apiDelete(id) {
-  const res = await fetch('/api/transactions/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id }),
-  });
-  if (!res.ok) throw new Error('Failed to delete transaction');
-  return res.json();
-}
-
-// ========== Recurring API ==========
-async function apiGetRecurring() {
-  const res = await fetch('/api/recurring');
-  if (!res.ok) throw new Error('Failed to load recurring');
-  return res.json();
-}
-
-async function apiSaveRecurring(rule) {
-  const res = await fetch('/api/recurring', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rule),
-  });
-  if (!res.ok) throw new Error('Failed to save recurring');
-  return res.json();
-}
-
-async function apiUpdateRecurring(rule) {
-  const res = await fetch('/api/recurring/update', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rule),
-  });
-  if (!res.ok) throw new Error('Failed to update recurring');
-  return res.json();
-}
-
-async function apiDeleteRecurring(id) {
-  const res = await fetch('/api/recurring/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id }),
-  });
-  if (!res.ok) throw new Error('Failed to delete recurring');
-  return res.json();
+function reloadFromStorage() {
+  transactions = JSON.parse(localStorage.getItem('spendwise_transactions') || '[]');
+  recurringRules = JSON.parse(localStorage.getItem('spendwise_recurring') || '[]');
+  populateMonthFilter();
+  render();
+  renderRecurringList();
 }
 
 // ========== Init ==========
 async function init() {
   dateInput.value = today();
 
-  try {
-    transactions = await apiGet();
-    recurringRules = await apiGetRecurring();
-    const generated = await autoGenerateRecurring();
-    const loadMsg = `Loaded ${transactions.length} record${transactions.length !== 1 ? 's' : ''}`;
-    setStatus(generated > 0 ? `${loadMsg} + ${generated} recurring` : loadMsg);
-  } catch (err) {
-    setStatus('ERROR: Could not reach server');
-    console.error(err);
-  }
+  transactions = JSON.parse(localStorage.getItem('spendwise_transactions') || '[]');
+  recurringRules = JSON.parse(localStorage.getItem('spendwise_recurring') || '[]');
+
+  const generated = autoGenerateRecurring();
+  const loadMsg = 'Loaded ' + transactions.length + ' record' + (transactions.length !== 1 ? 's' : '');
+  setStatus(generated > 0 ? loadMsg + ' + ' + generated + ' recurring' : loadMsg);
 
   populateMonthFilter();
   render();
@@ -271,6 +223,16 @@ async function init() {
 
   updateClock();
   setInterval(updateClock, 1000);
+
+  // Sync
+  document.getElementById('syncBtn').addEventListener('click', () => {
+    if (DriveSync.isSignedIn) {
+      if (confirm('Sign out of Google Drive sync?')) DriveSync.signOut();
+    } else {
+      DriveSync.signIn();
+    }
+  });
+  DriveSync.initialize();
 }
 
 // ========== Amount Stepper ==========
@@ -302,7 +264,7 @@ function setRecType(type) {
 }
 
 // ========== Add Transaction ==========
-async function handleAddTransaction(e) {
+function handleAddTransaction(e) {
   e.preventDefault();
 
   const transaction = {
@@ -314,18 +276,12 @@ async function handleAddTransaction(e) {
     type: currentType,
   };
 
-  try {
-    await apiAdd(transaction);
-    transactions.unshift(transaction);
-    populateMonthFilter();
-    render();
-    setStatus(`INSERT → ${escapeHtml(transaction.description)} (${formatCurrency(transaction.amount)})`);
-    showToast('Record inserted');
-  } catch (err) {
-    setStatus('ERROR: Write failed');
-    showToast('Write failed — check server');
-    console.error(err);
-  }
+  transactions.unshift(transaction);
+  saveTransactions();
+  populateMonthFilter();
+  render();
+  setStatus('INSERT \u2192 ' + escapeHtml(transaction.description) + ' (' + formatCurrency(transaction.amount) + ')');
+  showToast('Record inserted');
 
   form.reset();
   dateInput.value = today();
@@ -334,20 +290,14 @@ async function handleAddTransaction(e) {
 }
 
 // ========== Delete Transaction ==========
-async function deleteTransaction(id) {
-  try {
-    await apiDelete(id);
-    const removed = transactions.find(t => t.id === id);
-    transactions = transactions.filter(t => t.id !== id);
-    populateMonthFilter();
-    render();
-    setStatus(`DELETE → ${removed ? escapeHtml(removed.description) : id}`);
-    showToast('Record deleted');
-  } catch (err) {
-    setStatus('ERROR: Delete failed');
-    showToast('Delete failed — check server');
-    console.error(err);
-  }
+function deleteTransaction(id) {
+  const removed = transactions.find(t => t.id === id);
+  transactions = transactions.filter(t => t.id !== id);
+  saveTransactions();
+  populateMonthFilter();
+  render();
+  setStatus('DELETE \u2192 ' + (removed ? escapeHtml(removed.description) : id));
+  showToast('Record deleted');
 }
 
 // ========== Filtering ==========
@@ -783,7 +733,7 @@ function getDueDates(rule) {
   return dates;
 }
 
-async function autoGenerateRecurring() {
+function autoGenerateRecurring() {
   let totalGenerated = 0;
   const allNew = [];
   const updatedRules = [];
@@ -809,20 +759,9 @@ async function autoGenerateRecurring() {
   }
 
   if (allNew.length > 0) {
-    try {
-      await fetch('/api/transactions/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(allNew),
-      });
-      transactions = await apiGet();
-
-      for (const rule of updatedRules) {
-        await apiUpdateRecurring(rule);
-      }
-    } catch (err) {
-      console.error('Auto-generate failed:', err);
-    }
+    transactions = allNew.concat(transactions);
+    saveTransactions();
+    saveRecurring();
   }
 
   return totalGenerated;
@@ -891,7 +830,7 @@ function openEditRecurring(id) {
   recDescInput.focus();
 }
 
-async function handleSaveRecurring(e) {
+function handleSaveRecurring(e) {
   e.preventDefault();
 
   const rule = {
@@ -906,66 +845,52 @@ async function handleSaveRecurring(e) {
     lastGenerated: null,
   };
 
-  try {
-    if (editingRecurringId) {
-      const existing = recurringRules.find(r => r.id === editingRecurringId);
-      if (existing) rule.lastGenerated = existing.lastGenerated;
-      await apiUpdateRecurring(rule);
-      const idx = recurringRules.findIndex(r => r.id === editingRecurringId);
-      if (idx !== -1) recurringRules[idx] = rule;
-      setStatus(`UPDATE RECURRING → ${escapeHtml(rule.description)}`);
-      showToast('Recurring rule updated');
+  if (editingRecurringId) {
+    const existing = recurringRules.find(r => r.id === editingRecurringId);
+    if (existing) rule.lastGenerated = existing.lastGenerated;
+    const idx = recurringRules.findIndex(r => r.id === editingRecurringId);
+    if (idx !== -1) recurringRules[idx] = rule;
+    saveRecurring();
+    setStatus('UPDATE RECURRING \u2192 ' + escapeHtml(rule.description));
+    showToast('Recurring rule updated');
+  } else {
+    recurringRules.push(rule);
+    saveRecurring();
+
+    // Auto-generate any due transactions for the new rule
+    const dates = getDueDates(rule);
+    if (dates.length > 0) {
+      const newTxns = dates.map((date, i) => ({
+        id: 'rec' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i.toString(36),
+        description: rule.description,
+        amount: rule.amount,
+        category: rule.category,
+        date,
+        type: rule.type || 'expense',
+      }));
+      transactions = newTxns.concat(transactions);
+      rule.lastGenerated = dates[dates.length - 1];
+      saveTransactions();
+      saveRecurring();
+      populateMonthFilter();
+      render();
+      showToast('Added rule + ' + dates.length + ' past transaction' + (dates.length !== 1 ? 's' : ''));
     } else {
-      await apiSaveRecurring(rule);
-      recurringRules.push(rule);
-
-      // Auto-generate any due transactions for the new rule
-      const dates = getDueDates(rule);
-      if (dates.length > 0) {
-        const newTxns = dates.map((date, i) => ({
-          id: 'rec' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i.toString(36),
-          description: rule.description,
-          amount: rule.amount,
-          category: rule.category,
-          date,
-          type: rule.type || 'expense',
-        }));
-        await fetch('/api/transactions/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newTxns),
-        });
-        rule.lastGenerated = dates[dates.length - 1];
-        await apiUpdateRecurring(rule);
-        transactions = await apiGet();
-        populateMonthFilter();
-        render();
-        showToast(`Added rule + ${dates.length} past transaction${dates.length !== 1 ? 's' : ''}`);
-      } else {
-        showToast('Recurring rule added');
-      }
-      setStatus(`ADD RECURRING → ${escapeHtml(rule.description)} (${rule.frequency})`);
+      showToast('Recurring rule added');
     }
-
-    closeRecurringModal();
-    renderRecurringList();
-  } catch (err) {
-    showToast('Failed — check server');
-    console.error(err);
+    setStatus('ADD RECURRING \u2192 ' + escapeHtml(rule.description) + ' (' + rule.frequency + ')');
   }
+
+  closeRecurringModal();
+  renderRecurringList();
 }
 
-async function deleteRecurring(id) {
-  try {
-    await apiDeleteRecurring(id);
-    recurringRules = recurringRules.filter(r => r.id !== id);
-    renderRecurringList();
-    setStatus(`DELETE RECURRING → ${id}`);
-    showToast('Recurring rule deleted');
-  } catch (err) {
-    showToast('Delete failed — check server');
-    console.error(err);
-  }
+function deleteRecurring(id) {
+  recurringRules = recurringRules.filter(r => r.id !== id);
+  saveRecurring();
+  renderRecurringList();
+  setStatus('DELETE RECURRING \u2192 ' + id);
+  showToast('Recurring rule deleted');
 }
 
 function closeRecurringModal() {
@@ -1002,7 +927,7 @@ function editTransaction(id) {
   editDescInput.focus();
 }
 
-async function handleSaveEdit(e) {
+function handleSaveEdit(e) {
   e.preventDefault();
   if (!editingTransactionId) return;
 
@@ -1015,27 +940,15 @@ async function handleSaveEdit(e) {
     type: editType,
   };
 
-  try {
-    const res = await fetch('/api/transactions/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    if (!res.ok) throw new Error('Update failed');
+  const idx = transactions.findIndex(t => t.id === editingTransactionId);
+  if (idx !== -1) transactions[idx] = updated;
+  saveTransactions();
 
-    // Update local state
-    const idx = transactions.findIndex(t => t.id === editingTransactionId);
-    if (idx !== -1) transactions[idx] = updated;
-
-    closeEditModal();
-    populateMonthFilter();
-    render();
-    setStatus(`UPDATE → ${escapeHtml(updated.description)} (${formatCurrency(updated.amount)})`);
-    showToast('Record updated');
-  } catch (err) {
-    showToast('Update failed — check server');
-    console.error(err);
-  }
+  closeEditModal();
+  populateMonthFilter();
+  render();
+  setStatus('UPDATE \u2192 ' + escapeHtml(updated.description) + ' (' + formatCurrency(updated.amount) + ')');
+  showToast('Record updated');
 }
 
 function closeEditModal() {
@@ -1945,7 +1858,7 @@ function updateCsvImportCount() {
   csvImportCount.textContent = count;
 }
 
-async function confirmCsvImport() {
+function confirmCsvImport() {
   const toImport = csvMappedTransactions.filter(t => t.valid && t.include);
   if (toImport.length === 0) {
     showToast('No records selected for import');
@@ -1963,29 +1876,16 @@ async function confirmCsvImport() {
 
   const skippedDupes = csvMappedTransactions.filter(t => t.isDuplicate && !t.include).length;
 
-  try {
-    const res = await fetch('/api/transactions/bulk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(toInsert),
-    });
-    if (!res.ok) throw new Error('Bulk import failed');
-    const result = await res.json();
+  transactions = toInsert.concat(transactions);
+  saveTransactions();
+  populateMonthFilter();
+  render();
 
-    // Reload from server to get consistent state
-    transactions = await apiGet();
-    populateMonthFilter();
-    render();
-
-    closeCsvModal();
-    let msg = `IMPORT → ${result.added} records added`;
-    if (skippedDupes > 0) msg += `, ${skippedDupes} duplicate${skippedDupes !== 1 ? 's' : ''} skipped`;
-    setStatus(msg);
-    showToast(`Imported ${result.added} records`);
-  } catch (err) {
-    showToast('Import failed — check server');
-    console.error(err);
-  }
+  closeCsvModal();
+  let msg = 'IMPORT \u2192 ' + toInsert.length + ' records added';
+  if (skippedDupes > 0) msg += ', ' + skippedDupes + ' duplicate' + (skippedDupes !== 1 ? 's' : '') + ' skipped';
+  setStatus(msg);
+  showToast('Imported ' + toInsert.length + ' records');
 }
 
 function closeCsvModal() {

@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpendWise — Terminal</title>
+  <title>SpendWise</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=19">
+  <link rel="stylesheet" href="styles.css?v=20">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body>
   <div class="app">
@@ -15,10 +17,17 @@
     <header class="topbar">
       <div class="topbar-left">
         <span class="logo">▪ SpendWise</span>
-        <span class="version">v1.0.0</span>
+        <span class="version">v2.0</span>
         <button class="btn-import-csv" id="importCsvBtn" title="Import CSV">⬆ IMPORT</button>
         <button class="btn-import-csv" id="exportCsvBtn" title="Export CSV">⬇ EXPORT</button>
         <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" hidden>
+        <div class="sync-controls">
+          <button class="btn-sync" id="syncBtn" title="Sign in with Google to sync">
+            <span class="sync-icon" id="syncIcon">◯</span>
+            <span id="syncLabel">SIGN IN</span>
+          </button>
+          <span class="sync-status" id="syncStatus"></span>
+        </div>
       </div>
       <div class="topbar-right">
         <div class="stat-cluster">
@@ -438,6 +447,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=19"></script>
+  <script src="sync.js?v=20"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>
