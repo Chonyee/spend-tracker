@@ -14,7 +14,7 @@
  */
 
 // ===== REPLACE THIS WITH YOUR CLIENT ID =====
-const CLIENT_ID = '1007692059807-t42t1nn91kchdrpniv133cbrf2qgha6b.apps.googleusercontent.com';
+const CLIENT_ID = '1007692059807-t42t1nn91kchdrpniv133cbrf2qgha6b.apps.googleusercontent.com ';
 // =============================================
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
@@ -28,7 +28,7 @@ const DriveSync = {
 
   // ---- Init ----
   async initialize() {
-    if (CLIENT_ID.includes('1007692059807-t42t1nn91kchdrpniv133cbrf2qgha6b.apps.googleusercontent.com')) {
+    if (CLIENT_ID.includes('YOUR_CLIENT_ID')) {
       console.log('DriveSync: No Client ID configured — sync disabled');
       return;
     }
