@@ -14,7 +14,7 @@
  */
 
 // ===== REPLACE THIS WITH YOUR CLIENT ID =====
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+const CLIENT_ID = '1007692059807-t42t1nn91kchdrpniv133cbrf2qgha6b.apps.googleusercontent.com';
 // =============================================
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
