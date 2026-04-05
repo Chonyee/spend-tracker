@@ -42,6 +42,11 @@ const pieLegendEl = document.getElementById('pieLegend');
 const amtMinusBtn = document.getElementById('amtMinus');
 const amtPlusBtn = document.getElementById('amtPlus');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const exportJsonBtn = document.getElementById('exportJsonBtn');
+const importJsonBtn = document.getElementById('importJsonBtn');
+const jsonFileInput = document.getElementById('jsonFileInput');
+const importExportBtn = document.getElementById('importExportBtn');
+const dataMenu = document.getElementById('dataMenu');
 const typeExpenseBtn = document.getElementById('typeExpense');
 const typeIncomeBtn = document.getElementById('typeIncome');
 const editTypeExpenseBtn = document.getElementById('editTypeExpense');
@@ -113,12 +118,10 @@ let recType = 'expense';
 // ========== Storage ==========
 function saveTransactions() {
   localStorage.setItem('spendwise_transactions', JSON.stringify(transactions));
-  DriveSync.schedulePush();
 }
 
 function saveRecurring() {
   localStorage.setItem('spendwise_recurring', JSON.stringify(recurringRules));
-  DriveSync.schedulePush();
 }
 
 function reloadFromStorage() {
@@ -173,12 +176,22 @@ async function init() {
   editTypeExpenseBtn.addEventListener('click', () => setEditType('expense'));
   editTypeIncomeBtn.addEventListener('click', () => setEditType('income'));
 
-  // Export CSV
-  exportCsvBtn.addEventListener('click', handleExportCsv);
+  // Data dropdown
+  importExportBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dataMenu.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => dataMenu.classList.add('hidden'));
+  dataMenu.addEventListener('click', (e) => e.stopPropagation());
 
-  // CSV import
-  importCsvBtn.addEventListener('click', () => csvFileInput.click());
+  exportCsvBtn.addEventListener('click', () => { dataMenu.classList.add('hidden'); handleExportCsv(); });
+  exportJsonBtn.addEventListener('click', () => { dataMenu.classList.add('hidden'); handleExportJson(); });
+  importCsvBtn.addEventListener('click', () => { dataMenu.classList.add('hidden'); csvFileInput.click(); });
+  importJsonBtn.addEventListener('click', () => { dataMenu.classList.add('hidden'); jsonFileInput.click(); });
   csvFileInput.addEventListener('change', handleCsvFile);
+  jsonFileInput.addEventListener('change', handleImportJson);
+
+  // CSV import modal
   csvModalClose.addEventListener('click', closeCsvModal);
   csvCancelBtn.addEventListener('click', closeCsvModal);
   csvPreviewBtn.addEventListener('click', showCsvPreview);
@@ -223,16 +236,6 @@ async function init() {
 
   updateClock();
   setInterval(updateClock, 1000);
-
-  // Sync
-  document.getElementById('syncBtn').addEventListener('click', () => {
-    if (DriveSync.isSignedIn) {
-      if (confirm('Sign out of Google Drive sync?')) DriveSync.signOut();
-    } else {
-      DriveSync.signIn();
-    }
-  });
-  DriveSync.initialize();
 }
 
 // ========== Amount Stepper ==========
@@ -1433,6 +1436,88 @@ function handleExportCsv() {
 
   setStatus(`EXPORT → ${sorted.length} records`);
   showToast(`Exported ${sorted.length} records`);
+}
+
+// ========== JSON Export ==========
+function handleExportJson() {
+  const data = {
+    version: '2.0',
+    exportDate: new Date().toISOString(),
+    transactions: transactions,
+    recurring: recurringRules,
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spendwise_backup_' + today() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  setStatus('EXPORT → JSON backup (' + transactions.length + ' transactions, ' + recurringRules.length + ' rules)');
+  showToast('JSON backup exported');
+}
+
+// ========== JSON Import ==========
+function handleImportJson(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  jsonFileInput.value = '';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    let parsed;
+    try {
+      parsed = JSON.parse(ev.target.result);
+    } catch (err) {
+      showToast('Invalid JSON file');
+      return;
+    }
+
+    // Support both formats: { transactions, recurring } or raw array
+    let importedTxns = [];
+    let importedRules = [];
+
+    if (Array.isArray(parsed)) {
+      importedTxns = parsed;
+    } else {
+      if (parsed.transactions && Array.isArray(parsed.transactions)) importedTxns = parsed.transactions;
+      if (parsed.recurring && Array.isArray(parsed.recurring)) importedRules = parsed.recurring;
+    }
+
+    // Validate transactions
+    importedTxns = importedTxns.filter(t => t.id && t.description && typeof t.amount === 'number' && t.date);
+
+    // Merge by ID
+    const existingTxnIds = new Set(transactions.map(t => t.id));
+    const newTxns = importedTxns.filter(t => !existingTxnIds.has(t.id));
+
+    const existingRuleIds = new Set(recurringRules.map(r => r.id));
+    const newRules = importedRules.filter(r => r.id && !existingRuleIds.has(r.id));
+
+    if (newTxns.length === 0 && newRules.length === 0) {
+      showToast('No new data to import (all duplicates)');
+      return;
+    }
+
+    transactions = newTxns.concat(transactions);
+    recurringRules = recurringRules.concat(newRules);
+    saveTransactions();
+    saveRecurring();
+    populateMonthFilter();
+    render();
+    renderRecurringList();
+
+    const parts = [];
+    if (newTxns.length > 0) parts.push(newTxns.length + ' transaction' + (newTxns.length !== 1 ? 's' : ''));
+    if (newRules.length > 0) parts.push(newRules.length + ' rule' + (newRules.length !== 1 ? 's' : ''));
+    setStatus('IMPORT → ' + parts.join(', '));
+    showToast('Imported ' + parts.join(', '));
+  };
+  reader.readAsText(file);
 }
 
 // ========== CSV Import ==========

@@ -85,47 +85,77 @@ body {
   border: 1px solid var(--border);
 }
 
-/* ========== Sync Controls ========== */
-.sync-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 4px;
+/* ========== Data Dropdown ========== */
+.dropdown-wrap {
+  position: relative;
 }
 
-.btn-sync {
+.btn-topbar {
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   padding: 4px 10px;
   background: var(--bg-elevated);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
-.btn-sync:hover {
+.btn-topbar:hover {
   background: var(--bg-hover);
-  color: var(--text-primary);
+  color: var(--accent);
   border-color: var(--accent);
 }
 
-.sync-icon {
-  font-size: 8px;
-  line-height: 1;
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 190px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  padding: 4px 0;
+  animation: dropdown-in 0.12s ease;
 }
 
-.sync-status {
-  font-size: 9px;
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-menu.hidden {
+  display: none;
+}
+
+.dropdown-item {
+  font-family: var(--mono);
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.3px;
-  transition: color var(--transition);
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background var(--transition), color var(--transition);
+}
+
+.dropdown-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }
 
 .topbar-right {
@@ -1067,27 +1097,6 @@ body {
 .rec-delete:hover {
   color: var(--red);
   background: var(--red-dim);
-}
-
-/* ========== Import CSV Button ========== */
-.btn-import-csv {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 4px 10px;
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition), border-color var(--transition);
-}
-
-.btn-import-csv:hover {
-  background: var(--bg-hover);
-  color: var(--accent);
-  border-color: var(--accent);
 }
 
 /* ========== Modal ========== */
