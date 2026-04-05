@@ -6,7 +6,7 @@
   <title>SpendWise — Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
   <div class="app">
@@ -139,33 +139,37 @@
 
       </aside>
 
-      <!-- Main: Transaction Table -->
+      <!-- Main: Tabbed Content -->
       <main class="main-panel">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">TRANSACTION LOG</span>
-            <div class="table-controls">
-              <div class="search-wrap">
-                <span class="search-icon">⌕</span>
-                <input type="text" id="searchInput" placeholder="Search transactions..." spellcheck="false">
-              </div>
-              <select id="categoryFilter">
-                <option value="all">ALL CATEGORIES</option>
-                <option value="Food & Dining">Food & Dining</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Bills & Utilities">Bills & Utilities</option>
-                <option value="Health">Health</option>
-                <option value="Education">Education</option>
-                <option value="Travel">Travel</option>
-                <option value="Personal Care">Personal Care</option>
-                <option value="Paycheck / Salary">Paycheck / Salary</option>
-                <option value="Other">Other</option>
-              </select>
-              <span class="row-count" id="rowCount">0 rows</span>
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="log" id="tabLog">TRANSACTION LOG</button>
+          <button class="tab-btn" data-tab="analytics" id="tabAnalytics">ANALYTICS</button>
+          <div class="tab-bar-right">
+            <div class="search-wrap" id="searchWrap">
+              <span class="search-icon">⌕</span>
+              <input type="text" id="searchInput" placeholder="Search transactions..." spellcheck="false">
             </div>
+            <select id="categoryFilter">
+              <option value="all">ALL CATEGORIES</option>
+              <option value="Food & Dining">Food & Dining</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Bills & Utilities">Bills & Utilities</option>
+              <option value="Health">Health</option>
+              <option value="Education">Education</option>
+              <option value="Travel">Travel</option>
+              <option value="Personal Care">Personal Care</option>
+              <option value="Paycheck / Salary">Paycheck / Salary</option>
+              <option value="Other">Other</option>
+            </select>
+            <span class="row-count" id="rowCount">0 rows</span>
           </div>
+        </div>
+
+        <!-- LOG Tab -->
+        <div class="tab-content active" id="tabContentLog">
           <div class="table-wrapper">
             <table class="data-table" id="transactionTable">
               <thead>
@@ -185,6 +189,49 @@
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- ANALYTICS Tab -->
+        <div class="tab-content" id="tabContentAnalytics">
+          <div class="analytics-layout">
+            <div class="analytics-grid" id="analyticsGrid">
+
+              <div class="analytics-card analytics-wide">
+                <div class="analytics-card-header">
+                  <span class="analytics-card-title">CATEGORY DEEP DIVE</span>
+                  <span class="analytics-card-subtitle">Select a category to explore</span>
+                </div>
+                <div class="analytics-chart" id="chartCategoryPicker"></div>
+                <div id="deepDiveInline"></div>
+              </div>
+
+              <div class="analytics-card analytics-wide">
+                <div class="analytics-card-header">
+                  <span class="analytics-card-title">MONTHLY CASH FLOW</span>
+                  <span class="analytics-card-subtitle" id="cashflowRange"></span>
+                </div>
+                <div class="analytics-chart" id="chartCashflow"></div>
+              </div>
+
+              <div class="analytics-card analytics-wide">
+                <div class="analytics-card-header">
+                  <span class="analytics-card-title">TOP EXPENSES</span>
+                  <span class="analytics-card-subtitle">Largest single transactions</span>
+                </div>
+                <div class="analytics-chart" id="chartTopExpenses"></div>
+              </div>
+
+              <div class="analytics-card analytics-wide">
+                <div class="analytics-card-header">
+                  <span class="analytics-card-title">CATEGORY TRENDS</span>
+                  <span class="analytics-card-subtitle">Top 5 categories over last 6 months</span>
+                </div>
+                <div class="analytics-chart" id="chartCategoryTrends"></div>
+              </div>
+
+            </div>
+          </div>
+          <div class="chart-tooltip" id="chartTooltip"></div>
         </div>
       </main>
 
@@ -391,6 +438,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

@@ -88,6 +88,11 @@ const recurringCancelBtn = document.getElementById('recurringCancel');
 const recSubmitBtn = document.getElementById('recSubmitBtn');
 const recTypeExpenseBtn = document.getElementById('recTypeExpense');
 const recTypeIncomeBtn = document.getElementById('recTypeIncome');
+const tabLogBtn = document.getElementById('tabLog');
+const tabAnalyticsBtn = document.getElementById('tabAnalytics');
+const tabContentLog = document.getElementById('tabContentLog');
+const tabContentAnalytics = document.getElementById('tabContentAnalytics');
+const searchWrap = document.getElementById('searchWrap');
 
 // ========== CSV State ==========
 let csvParsedRows = [];
@@ -244,6 +249,10 @@ async function init() {
   recFrequencyInput.addEventListener('change', updateDayLabel);
   recTypeExpenseBtn.addEventListener('click', () => setRecType('expense'));
   recTypeIncomeBtn.addEventListener('click', () => setRecType('income'));
+
+  // Tabs
+  tabLogBtn.addEventListener('click', () => switchTab('log'));
+  tabAnalyticsBtn.addEventListener('click', () => switchTab('analytics'));
 
   // Sortable columns
   document.querySelectorAll('.col-sortable').forEach(th => {
@@ -1032,6 +1041,435 @@ async function handleSaveEdit(e) {
 function closeEditModal() {
   editModal.classList.add('hidden');
   editingTransactionId = null;
+}
+
+// ========== Tab Switching ==========
+function switchTab(tab) {
+  tabLogBtn.classList.toggle('active', tab === 'log');
+  tabAnalyticsBtn.classList.toggle('active', tab === 'analytics');
+  tabContentLog.classList.toggle('active', tab === 'log');
+  tabContentAnalytics.classList.toggle('active', tab === 'analytics');
+  searchWrap.style.display = tab === 'log' ? '' : 'none';
+  document.getElementById('rowCount').style.display = tab === 'log' ? '' : 'none';
+  if (tab === 'analytics') renderAnalytics();
+}
+
+// ========== Analytics ==========
+const tooltipEl = document.getElementById('chartTooltip');
+
+function showTooltipAt(e, html) {
+  tooltipEl.innerHTML = html;
+  tooltipEl.classList.add('visible');
+  const rect = tooltipEl.getBoundingClientRect();
+  tooltipEl.style.left = (e.clientX - rect.width / 2) + 'px';
+  tooltipEl.style.top = (e.clientY - rect.height - 12) + 'px';
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove('visible');
+}
+
+function renderAnalytics() {
+  renderCategoryPicker();
+  renderCashflowChart();
+  renderTopExpenses();
+  renderCategoryTrends();
+}
+
+function getMonthlyBuckets() {
+  const buckets = {};
+  transactions.forEach(t => {
+    const key = t.date.slice(0, 7);
+    if (!buckets[key]) buckets[key] = { expenses: 0, income: 0 };
+    if (t.type === 'income') {
+      buckets[key].income += t.amount;
+    } else {
+      buckets[key].expenses += t.amount;
+    }
+  });
+  return Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+// ---- SVG Helpers ----
+function svgLine(points, labels, color, w, h, pad, maxVal, addArea) {
+  if (points.length === 0) return '';
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+  const stepX = points.length > 1 ? chartW / (points.length - 1) : 0;
+
+  const coords = points.map((val, i) => ({
+    x: pad.l + stepX * i,
+    y: pad.t + chartH - (val / maxVal) * chartH,
+    val, label: labels ? labels[i] : '',
+  }));
+
+  let path = 'M' + coords[0].x + ',' + coords[0].y;
+  for (let i = 1; i < coords.length; i++) {
+    const prev = coords[i - 1];
+    const curr = coords[i];
+    const cpx = (prev.x + curr.x) / 2;
+    path += ' C' + cpx + ',' + prev.y + ' ' + cpx + ',' + curr.y + ' ' + curr.x + ',' + curr.y;
+  }
+
+  let svg = '';
+  if (addArea) {
+    const areaPath = path + ' L' + coords[coords.length-1].x + ',' + (pad.t + chartH) + ' L' + coords[0].x + ',' + (pad.t + chartH) + ' Z';
+    svg += '<path class="data-area" d="' + areaPath + '" fill="' + color + '"/>';
+  }
+  svg += '<path class="data-line" d="' + path + '" stroke="' + color + '"/>';
+
+  coords.forEach(c => {
+    svg += '<circle class="data-dot" cx="' + c.x + '" cy="' + c.y + '" r="3.5" fill="var(--bg-surface)" stroke="' + color + '" data-tip-val="' + formatCurrency(c.val) + '" data-tip-label="' + c.label + '"/>';
+  });
+
+  return svg;
+}
+
+function svgGrid(w, h, pad, maxVal, steps) {
+  const chartH = h - pad.t - pad.b;
+  let svg = '';
+  for (let i = 0; i <= steps; i++) {
+    const y = pad.t + (chartH / steps) * i;
+    const val = maxVal - (maxVal / steps) * i;
+    svg += '<line class="grid-line" x1="' + pad.l + '" y1="' + y + '" x2="' + (w - pad.r) + '" y2="' + y + '"/>';
+    svg += '<text class="axis-label" x="' + (pad.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">$' + Math.round(val) + '</text>';
+  }
+  return svg;
+}
+
+function attachDotTooltips(container) {
+  container.querySelectorAll('.data-dot').forEach(dot => {
+    dot.addEventListener('mouseenter', e => {
+      const val = dot.getAttribute('data-tip-val');
+      const label = dot.getAttribute('data-tip-label');
+      const html = (label ? '<span class="chart-tooltip-label">' + label + '</span><br>' : '') + val;
+      showTooltipAt(e, html);
+    });
+    dot.addEventListener('mousemove', e => {
+      const rect = tooltipEl.getBoundingClientRect();
+      tooltipEl.style.left = (e.clientX - rect.width / 2) + 'px';
+      tooltipEl.style.top = (e.clientY - rect.height - 12) + 'px';
+    });
+    dot.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ---- Cashflow SVG Bar Chart ----
+function renderCashflowChart() {
+  const el = document.getElementById('chartCashflow');
+  const months = getMonthlyBuckets().slice(-12);
+  const rangeEl = document.getElementById('cashflowRange');
+
+  if (months.length === 0) {
+    el.innerHTML = '<div class="empty-msg">No data yet.</div>';
+    rangeEl.textContent = '';
+    return;
+  }
+
+  rangeEl.textContent = months[0][0] + ' \u2014 ' + months[months.length - 1][0];
+  const maxVal = Math.max(...months.map(([, d]) => Math.max(d.expenses, d.income)), 1) * 1.1;
+
+  const w = 640, h = 180;
+  const pad = { t: 12, r: 16, b: 28, l: 52 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+  const n = months.length;
+  const groupW = chartW / n;
+  const barW = Math.min(Math.max(groupW * 0.28, 4), 14);
+  const gap = Math.max(barW * 0.3, 2);
+
+  let svg = '<svg class="chart-svg" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Grid
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (chartH / 4) * i;
+    const val = maxVal - (maxVal / 4) * i;
+    svg += '<line class="grid-line" x1="' + pad.l + '" y1="' + y + '" x2="' + (w - pad.r) + '" y2="' + y + '"/>';
+    if (i < 4) {
+      svg += '<text class="axis-label" x="' + (pad.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">$' + Math.round(val) + '</text>';
+    }
+  }
+  // Baseline
+  svg += '<line x1="' + pad.l + '" y1="' + (pad.t + chartH) + '" x2="' + (w - pad.r) + '" y2="' + (pad.t + chartH) + '" stroke="var(--border)" stroke-width="1"/>';
+
+  // Bars + labels
+  months.forEach(([month, data], i) => {
+    const cx = pad.l + groupW * i + groupW / 2;
+    const incH = (data.income / maxVal) * chartH;
+    const expH = (data.expenses / maxVal) * chartH;
+
+    // Income bar
+    if (data.income > 0) {
+      const x = cx - gap / 2 - barW;
+      const y = pad.t + chartH - incH;
+      svg += '<rect class="cf-svg-bar" x="' + x + '" y="' + y + '" width="' + barW + '" height="' + incH + '" rx="2" fill="var(--green)" opacity="0.65"' +
+        ' data-month="' + month + '" data-type="Income" data-val="' + formatCurrency(data.income) + '"/>';
+    }
+
+    // Expense bar
+    if (data.expenses > 0) {
+      const x = cx + gap / 2;
+      const y = pad.t + chartH - expH;
+      svg += '<rect class="cf-svg-bar" x="' + x + '" y="' + y + '" width="' + barW + '" height="' + expH + '" rx="2" fill="var(--red)" opacity="0.65"' +
+        ' data-month="' + month + '" data-type="Expenses" data-val="' + formatCurrency(data.expenses) + '"/>';
+    }
+
+    // Month label
+    svg += '<text class="axis-label" x="' + cx + '" y="' + (h - 8) + '" text-anchor="middle">' + month.slice(5) + '</text>';
+  });
+
+  svg += '</svg>';
+
+  // Legend
+  svg += '<div class="cf-legend">' +
+    '<span><span class="cf-legend-dot" style="background:var(--green)"></span>Income</span>' +
+    '<span><span class="cf-legend-dot" style="background:var(--red)"></span>Expenses</span>' +
+  '</div>';
+
+  el.innerHTML = svg;
+
+  // Tooltips
+  el.querySelectorAll('.cf-svg-bar').forEach(bar => {
+    bar.addEventListener('mouseenter', e => {
+      showTooltipAt(e, '<span class="chart-tooltip-label">' + bar.dataset.month + '</span><br>' + bar.dataset.type + ': ' + bar.dataset.val);
+    });
+    bar.addEventListener('mousemove', e => {
+      const rect = tooltipEl.getBoundingClientRect();
+      tooltipEl.style.left = (e.clientX - rect.width / 2) + 'px';
+      tooltipEl.style.top = (e.clientY - rect.height - 12) + 'px';
+    });
+    bar.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ---- Top Expenses ----
+function renderTopExpenses() {
+  const el = document.getElementById('chartTopExpenses');
+  const expenses = transactions
+    .filter(t => (t.type || 'expense') === 'expense')
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+
+  if (expenses.length === 0) {
+    el.innerHTML = '<div class="empty-msg">No expenses yet.</div>';
+    return;
+  }
+
+  const maxAmt = expenses[0].amount;
+
+  el.innerHTML = expenses.map((t, i) => {
+    const pct = (t.amount / maxAmt) * 100;
+    const color = (CATEGORIES[t.category] || CATEGORIES['Other']).color;
+    return '<div class="te-row">' +
+      '<span class="te-rank">#' + (i + 1) + '</span>' +
+      '<div class="te-bar-track">' +
+        '<div class="te-bar-fill" style="width:' + pct + '%;background:' + color + '"></div>' +
+        '<span class="te-bar-label">' + escapeHtml(t.description) + '</span>' +
+      '</div>' +
+      '<span class="te-date">' + t.date + '</span>' +
+      '<span class="te-amount">-' + formatCurrency(t.amount) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+// ---- Category Trends ----
+function renderCategoryTrends() {
+  const el = document.getElementById('chartCategoryTrends');
+  const allMonths = getMonthlyBuckets().slice(-6);
+
+  if (allMonths.length < 2) {
+    el.innerHTML = '<div class="empty-msg">Need at least 2 months of data.</div>';
+    return;
+  }
+
+  const monthKeys = allMonths.map(function(b) { return b[0]; });
+  const catMonthly = {};
+  transactions.filter(t => (t.type || 'expense') === 'expense').forEach(t => {
+    const m = t.date.slice(0, 7);
+    if (!monthKeys.includes(m)) return;
+    if (!catMonthly[t.category]) catMonthly[t.category] = {};
+    if (!catMonthly[t.category][m]) catMonthly[t.category][m] = 0;
+    catMonthly[t.category][m] += t.amount;
+  });
+
+  const topCats = Object.entries(catMonthly)
+    .map(function(e) { return [e[0], Object.values(e[1]).reduce(function(a,b){return a+b},0)]; })
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(function(e) { return e[0]; });
+
+  const maxVal = Math.max(
+    ...topCats.flatMap(cat => monthKeys.map(m => catMonthly[cat]?.[m] || 0)), 1
+  );
+
+  const w = 620, h = 200;
+  const pad = { t: 14, r: 20, b: 30, l: 50 };
+  const chartW = w - pad.l - pad.r;
+  const stepX = monthKeys.length > 1 ? chartW / (monthKeys.length - 1) : chartW;
+
+  let svg = '<svg class="chart-svg" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+  svg += svgGrid(w, h, pad, maxVal, 4);
+
+  monthKeys.forEach((m, i) => {
+    const x = pad.l + stepX * i;
+    svg += '<text class="axis-label" x="' + x + '" y="' + (h - 6) + '" text-anchor="middle">' + m.slice(5) + '</text>';
+  });
+
+  topCats.forEach(cat => {
+    const color = (CATEGORIES[cat] || CATEGORIES['Other']).color;
+    const points = monthKeys.map(m => catMonthly[cat]?.[m] || 0);
+    svg += svgLine(points, monthKeys.map(m => cat + ' \u00B7 ' + m), color, w, h, pad, maxVal, true);
+  });
+
+  svg += '</svg>';
+
+  const legend = topCats.map(cat => {
+    const color = (CATEGORIES[cat] || CATEGORIES['Other']).color;
+    return '<span class="ct-legend-item"><span class="ct-legend-dot" style="background:' + color + '"></span>' + cat + '</span>';
+  }).join('');
+
+  el.innerHTML = svg + '<div class="ct-legend">' + legend + '</div>';
+  attachDotTooltips(el);
+}
+
+// ---- Category Picker ----
+let activeDDCategory = null;
+
+function renderCategoryPicker() {
+  const el = document.getElementById('chartCategoryPicker');
+  const catTotals = {};
+  transactions.filter(t => (t.type || 'expense') === 'expense').forEach(t => {
+    if (!catTotals[t.category]) catTotals[t.category] = 0;
+    catTotals[t.category] += t.amount;
+  });
+
+  const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+
+  if (sorted.length === 0) {
+    el.innerHTML = '<div class="empty-msg">No expense data.</div>';
+    return;
+  }
+
+  el.innerHTML = '<div class="cat-picker-grid">' + sorted.map(function(entry) {
+    const cat = entry[0], total = entry[1];
+    const color = (CATEGORIES[cat] || CATEGORIES['Other']).color;
+    const isActive = activeDDCategory === cat;
+    const cls = isActive ? 'cat-picker-btn cat-picker-active' : 'cat-picker-btn';
+    return '<button class="' + cls + '" data-cat="' + cat + '" style="' + (isActive ? 'border-color:' + color + ';background:var(--bg-hover)' : '') + '">' +
+      '<span class="cat-picker-dot" style="background:' + color + '"></span>' +
+      cat +
+      '<span class="cat-picker-amt">' + formatCurrency(total) + '</span>' +
+    '</button>';
+  }).join('') + '</div>';
+
+  el.querySelectorAll('.cat-picker-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      if (activeDDCategory === cat) {
+        activeDDCategory = null;
+        document.getElementById('deepDiveInline').innerHTML = '';
+        renderCategoryPicker();
+      } else {
+        activeDDCategory = cat;
+        renderCategoryPicker();
+        renderDeepDive(cat);
+      }
+    });
+  });
+}
+
+// ---- Deep Dive Inline ----
+function renderDeepDive(category) {
+  const el = document.getElementById('deepDiveInline');
+  const color = (CATEGORIES[category] || CATEGORIES['Other']).color;
+  const catTxns = transactions.filter(t => t.category === category && (t.type || 'expense') === 'expense');
+
+  if (catTxns.length === 0) {
+    el.innerHTML = '<div class="empty-msg">No transactions.</div>';
+    return;
+  }
+
+  const total = catTxns.reduce((s, t) => s + t.amount, 0);
+  const avg = total / catTxns.length;
+  const max = Math.max(...catTxns.map(t => t.amount));
+  const min = Math.min(...catTxns.map(t => t.amount));
+
+  // Monthly trend
+  const monthlyData = {};
+  catTxns.forEach(t => {
+    const m = t.date.slice(0, 7);
+    if (!monthlyData[m]) monthlyData[m] = 0;
+    monthlyData[m] += t.amount;
+  });
+  const monthKeys = Object.keys(monthlyData).sort().slice(-12);
+  const monthVals = monthKeys.map(m => monthlyData[m]);
+  const maxMonthVal = Math.max(...monthVals, 1);
+
+  const w = 580, h = 150;
+  const pad = { t: 12, r: 20, b: 28, l: 50 };
+  const stepX = monthKeys.length > 1 ? (w - pad.l - pad.r) / (monthKeys.length - 1) : 0;
+
+  let trendSvg = '<svg class="chart-svg" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+  trendSvg += svgGrid(w, h, pad, maxMonthVal, 3);
+  monthKeys.forEach((m, i) => {
+    const x = pad.l + stepX * i;
+    trendSvg += '<text class="axis-label" x="' + x + '" y="' + (h - 6) + '" text-anchor="middle">' + m.slice(5) + '</text>';
+  });
+  trendSvg += svgLine(monthVals, monthKeys, color, w, h, pad, maxMonthVal, true);
+  trendSvg += '</svg>';
+
+  // Top 5 + Recent 8
+  const top5 = [...catTxns].sort((a, b) => b.amount - a.amount).slice(0, 5);
+  const top5Max = top5[0].amount;
+  const recent = [...catTxns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+
+  el.innerHTML =
+    '<div class="dd-title-bar">' +
+      '<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + color + '"></span>' +
+      '<span class="dd-title-text">' + category + '</span>' +
+      '<button class="dd-clear-btn" id="ddClearBtn">CLOSE \u2715</button>' +
+    '</div>' +
+
+    '<div class="dd-stats">' +
+      '<div class="dd-stat"><span class="dd-stat-label">TOTAL</span><span class="dd-stat-value" style="color:' + color + '">' + formatCurrency(total) + '</span></div>' +
+      '<div class="dd-stat"><span class="dd-stat-label">COUNT</span><span class="dd-stat-value">' + catTxns.length + '</span></div>' +
+      '<div class="dd-stat"><span class="dd-stat-label">AVERAGE</span><span class="dd-stat-value">' + formatCurrency(avg) + '</span></div>' +
+      '<div class="dd-stat"><span class="dd-stat-label">RANGE</span><span class="dd-stat-value" style="font-size:14px">' + formatCurrency(min) + ' \u2013 ' + formatCurrency(max) + '</span></div>' +
+    '</div>' +
+
+    '<div class="dd-section">' +
+      '<div class="dd-section-title">MONTHLY TREND</div>' +
+      trendSvg +
+    '</div>' +
+
+    '<div class="dd-columns">' +
+      '<div class="dd-section">' +
+        '<div class="dd-section-title">LARGEST</div>' +
+        top5.map(function(t, i) {
+          const pct = (t.amount / top5Max) * 100;
+          return '<div class="te-row">' +
+            '<span class="te-rank">#' + (i+1) + '</span>' +
+            '<div class="te-bar-track"><div class="te-bar-fill" style="width:' + pct + '%;background:' + color + '"></div><span class="te-bar-label">' + escapeHtml(t.description) + '</span></div>' +
+            '<span class="te-amount">-' + formatCurrency(t.amount) + '</span></div>';
+        }).join('') +
+      '</div>' +
+      '<div class="dd-section">' +
+        '<div class="dd-section-title">RECENT</div>' +
+        recent.map(function(t) {
+          return '<div class="te-row"><span class="te-date">' + t.date.slice(5) + '</span>' +
+            '<div class="te-bar-track" style="background:transparent"><span class="te-bar-label" style="position:static;transform:none">' + escapeHtml(t.description) + '</span></div>' +
+            '<span class="te-amount">-' + formatCurrency(t.amount) + '</span></div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+
+  attachDotTooltips(el);
+
+  document.getElementById('ddClearBtn').addEventListener('click', () => {
+    activeDDCategory = null;
+    el.innerHTML = '';
+    renderCategoryPicker();
+  });
 }
 
 // ========== Export CSV ==========
