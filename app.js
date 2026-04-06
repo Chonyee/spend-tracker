@@ -3,6 +3,8 @@ const CATEGORIES = {
   'Food & Dining':     { color: '#d29922' },
   'Transportation':    { color: '#58a6ff' },
   'Shopping':          { color: '#f778ba' },
+  'House':             { color: '#6f42c1' },
+  'Clothes':           { color: '#e55353' },
   'Entertainment':     { color: '#bc8cff' },
   'Bills & Utilities': { color: '#3fb950' },
   'Health':            { color: '#f85149' },
