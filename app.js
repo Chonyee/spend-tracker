@@ -4,7 +4,7 @@ const CATEGORIES = {
   'Transportation':    { color: '#58a6ff' },
   'Shopping':          { color: '#f778ba' },
   'Clothes':           { color: '#e879a8' },
-  'Housing':           { color: '#f0abfc' },
+  'House':             { color: '#f0abfc' },
   'Entertainment':     { color: '#bc8cff' },
   'Bills & Utilities': { color: '#3fb950' },
   'Health':            { color: '#f85149' },
