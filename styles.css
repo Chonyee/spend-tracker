@@ -27,8 +27,8 @@
   --orange: #db6d28;
   --purple: #bc8cff;
   --cyan: #39d2c0;
-  --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  --mono: 'Source Code Pro', 'Consolas', monospace;
+  --sans: 'Share Tech Mono', 'Source Code Pro', monospace;
   --radius: 6px;
   --transition: 0.15s ease;
 }
@@ -70,10 +70,12 @@ body {
 }
 
 .logo {
+  font-family: var(--sans);
   font-weight: 700;
   font-size: 14px;
   color: var(--accent);
-  letter-spacing: -0.3px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .version {
@@ -91,21 +93,21 @@ body {
 }
 
 .btn-topbar {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 4px 10px;
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  background: rgba(88, 166, 255, 0.08);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
   border-radius: 4px;
   cursor: pointer;
   transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
 .btn-topbar:hover {
-  background: var(--bg-hover);
+  background: rgba(88, 166, 255, 0.18);
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -114,7 +116,7 @@ body {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  min-width: 190px;
+  min-width: 220px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -134,10 +136,11 @@ body {
 }
 
 .dropdown-item {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
-  font-weight: 500;
-  padding: 8px 14px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  padding: 9px 16px;
   background: none;
   border: none;
   color: var(--text-secondary);
@@ -149,7 +152,7 @@ body {
 
 .dropdown-item:hover {
   background: var(--bg-hover);
-  color: var(--text-primary);
+  color: var(--accent);
 }
 
 .dropdown-divider {
@@ -182,10 +185,11 @@ body {
 }
 
 .stat-label {
+  font-family: var(--sans);
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
@@ -258,10 +262,11 @@ body {
 }
 
 .panel-title {
+  font-family: var(--sans);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-secondary);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .panel-badge {
@@ -300,10 +305,11 @@ body {
 }
 
 .field label {
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .field input,
@@ -430,10 +436,10 @@ body {
 
 .type-btn {
   flex: 1;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-weight: 400;
+  letter-spacing: 1.2px;
   padding: 7px 8px;
   background: var(--bg-input);
   color: var(--text-muted);
@@ -654,10 +660,11 @@ body {
 .data-table th {
   padding: 8px 14px;
   text-align: left;
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -829,12 +836,15 @@ body {
   height: 26px;
   background: var(--accent-dim);
   color: rgba(255,255,255,0.9);
+  font-family: var(--sans);
   font-size: 11px;
   flex-shrink: 0;
 }
 
 .status-left {
-  font-weight: 500;
+  font-family: var(--sans);
+  font-weight: 400;
+  letter-spacing: 0.5px;
 }
 
 .status-right {
@@ -1047,9 +1057,10 @@ body {
 }
 
 .rec-freq-badge {
+  font-family: var(--sans);
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-weight: 400;
+  letter-spacing: 1px;
   padding: 1px 5px;
   border-radius: 3px;
   background: var(--accent-dim);
@@ -1143,10 +1154,11 @@ body {
 }
 
 .modal-title {
+  font-family: var(--sans);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-secondary);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .modal-close {
@@ -1180,10 +1192,11 @@ body {
 }
 
 .modal-section-label {
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
   display: block;
   margin-bottom: 6px;
 }
@@ -1454,10 +1467,10 @@ body {
 }
 
 .tab-btn {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-weight: 400;
+  letter-spacing: 1.5px;
   padding: 10px 16px;
   background: none;
   color: var(--text-muted);
@@ -1527,10 +1540,11 @@ body {
 }
 
 .analytics-card-title {
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--accent);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .analytics-card-subtitle {
@@ -1672,10 +1686,11 @@ body {
 }
 
 .mc-stat-label {
+  font-family: var(--sans);
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .mc-stat-row {
@@ -1908,10 +1923,11 @@ body {
 }
 
 .dd-stat-label {
+  font-family: var(--sans);
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
 }
 
 .dd-stat-value {
@@ -1927,10 +1943,11 @@ body {
 }
 
 .dd-section-title {
+  font-family: var(--sans);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--accent);
-  letter-spacing: 0.8px;
+  letter-spacing: 1.5px;
   margin-bottom: 12px;
 }
 

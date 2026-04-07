@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpendWise</title>
+  <title>Spending Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=22">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
   <div class="app">
@@ -14,16 +15,16 @@
     <!-- Top Bar -->
     <header class="topbar">
       <div class="topbar-left">
-        <span class="logo">▪ SpendWise</span>
+        <span class="logo">// Spending Tracker</span>
         <span class="version">v2.0</span>
         <div class="dropdown-wrap">
-          <button class="btn-topbar" id="importExportBtn">⬆⬇ DATA</button>
+          <button class="btn-topbar" id="importExportBtn">IMPORT / EXPORT ▾</button>
           <div class="dropdown-menu hidden" id="dataMenu">
-            <button class="dropdown-item" id="importCsvBtn">⬆ Import CSV</button>
-            <button class="dropdown-item" id="importJsonBtn">⬆ Import JSON Backup</button>
+            <button class="dropdown-item" id="importCsvBtn">↑ Import from CSV</button>
+            <button class="dropdown-item" id="importJsonBtn">↑ Import from JSON backup</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" id="exportCsvBtn">⬇ Export as CSV</button>
-            <button class="dropdown-item" id="exportJsonBtn">⬇ Export as JSON Backup</button>
+            <button class="dropdown-item" id="exportCsvBtn">↓ Export as CSV</button>
+            <button class="dropdown-item" id="exportJsonBtn">↓ Export as JSON backup</button>
           </div>
           <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" hidden>
           <input type="file" id="jsonFileInput" accept=".json" hidden>
@@ -93,6 +94,7 @@
                 <option value="Shopping">Shopping</option>
                 <option value="Clothes">Clothes</option>
                 <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
                 <option value="Entertainment">Entertainment</option>
                 <option value="Bills & Utilities">Bills & Utilities</option>
                 <option value="Health">Health</option>
@@ -166,8 +168,9 @@
               <option value="Food & Dining">Food & Dining</option>
               <option value="Transportation">Transportation</option>
               <option value="Shopping">Shopping</option>
-              <option value="Clothes">Clothes</option>
-              <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
+                <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
               <option value="Entertainment">Entertainment</option>
               <option value="Bills & Utilities">Bills & Utilities</option>
               <option value="Health">Health</option>
@@ -283,6 +286,7 @@
                 <option value="Shopping">Shopping</option>
                 <option value="Clothes">Clothes</option>
                 <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
                 <option value="Entertainment">Entertainment</option>
                 <option value="Bills & Utilities" selected>Bills & Utilities</option>
                 <option value="Health">Health</option>
@@ -362,8 +366,9 @@
               <option value="Food & Dining">Food & Dining</option>
               <option value="Transportation">Transportation</option>
               <option value="Shopping">Shopping</option>
-              <option value="Clothes">Clothes</option>
-              <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
+                <option value="House">House</option>
+                <option value="Clothes">Clothes</option>
               <option value="Entertainment">Entertainment</option>
               <option value="Bills & Utilities">Bills & Utilities</option>
               <option value="Health">Health</option>
@@ -414,7 +419,7 @@
 
         <div class="modal-section">
           <span class="modal-section-label">UNMAPPED CATEGORIES</span>
-          <p class="modal-hint">CSV values that don't match a SpendWise category. Assign them or they'll default to "Other".</p>
+          <p class="modal-hint">CSV values that don't match a Spending Tracker category. Assign them or they'll default to "Other".</p>
           <div id="csvCatMapping" class="csv-cat-mapping"></div>
         </div>
 
@@ -455,6 +460,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=22"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

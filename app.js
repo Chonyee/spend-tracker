@@ -105,7 +105,7 @@ const searchWrap = document.getElementById('searchWrap');
 let csvParsedRows = [];
 let csvHeaders = [];
 let csvColumnMappings = {};   // colIndex -> field name
-let csvCategoryMap = {};       // original value -> SpendWise category
+let csvCategoryMap = {};       // original value -> Spending Tracker category
 let csvMappedTransactions = [];
 let editingTransactionId = null;
 let currentType = 'expense';
@@ -1430,7 +1430,7 @@ function handleExportCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `spendwise_${today()}.csv`;
+  a.download = `spending-tracker_${today()}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1453,7 +1453,7 @@ function handleExportJson() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'spendwise_backup_' + today() + '.json';
+  a.download = 'spending-tracker_backup_' + today() + '.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1684,7 +1684,7 @@ function updateCatMapping() {
     if (val) rawCats.add(val);
   });
 
-  // Check which ones don't directly match a SpendWise category
+  // Check which ones don't directly match a Spending Tracker category
   const unmatched = [...rawCats].filter(c => !VALID_CATEGORIES.includes(c));
 
   if (unmatched.length === 0) {
