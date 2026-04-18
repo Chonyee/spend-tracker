@@ -11,7 +11,6 @@
 </head>
 <body>
   <div class="app">
-
     <!-- Top Bar -->
     <header class="topbar">
       <div class="topbar-left">
@@ -56,12 +55,9 @@
         </div>
       </div>
     </header>
-
     <div class="workspace">
-
       <!-- Left Panel: Input + Category Breakdown -->
       <aside class="sidebar">
-
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">+ NEW RECORD</span>
@@ -90,17 +86,18 @@
               <select id="category" required>
                 <option value="" disabled selected>— select —</option>
                 <option value="Food & Dining">Food & Dining</option>
+                <option value="Groceries">Groceries</option>
                 <option value="Transportation">Transportation</option>
                 <option value="Shopping">Shopping</option>
                 <option value="Clothes">Clothes</option>
                 <option value="House">House</option>
-                <option value="Clothes">Clothes</option>
                 <option value="Entertainment">Entertainment</option>
                 <option value="Bills & Utilities">Bills & Utilities</option>
                 <option value="Health">Health</option>
                 <option value="Education">Education</option>
                 <option value="Travel">Travel</option>
                 <option value="Personal Care">Personal Care</option>
+                <option value="Pets">Pets</option>
                 <option value="Paycheck / Salary">Paycheck / Salary</option>
                 <option value="Other">Other</option>
               </select>
@@ -115,7 +112,6 @@
             <button type="submit" class="btn-submit">INSERT ↵</button>
           </form>
         </div>
-
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">CATEGORY BREAKDOWN</span>
@@ -125,7 +121,6 @@
             <div class="empty-msg">No data.</div>
           </div>
         </div>
-
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">DISTRIBUTION</span>
@@ -139,7 +134,6 @@
           </div>
           <div id="pieLegend" class="pie-legend"></div>
         </div>
-
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">RECURRING</span>
@@ -149,9 +143,7 @@
             <div class="empty-msg">No recurring rules.</div>
           </div>
         </div>
-
       </aside>
-
       <!-- Main: Tabbed Content -->
       <main class="main-panel">
         <!-- Tab Bar -->
@@ -166,24 +158,24 @@
             <select id="categoryFilter">
               <option value="all">ALL CATEGORIES</option>
               <option value="Food & Dining">Food & Dining</option>
+                <option value="Groceries">Groceries</option>
               <option value="Transportation">Transportation</option>
               <option value="Shopping">Shopping</option>
-                <option value="Clothes">Clothes</option>
-                <option value="House">House</option>
-                <option value="Clothes">Clothes</option>
+              <option value="Clothes">Clothes</option>
+              <option value="House">House</option>
               <option value="Entertainment">Entertainment</option>
               <option value="Bills & Utilities">Bills & Utilities</option>
               <option value="Health">Health</option>
               <option value="Education">Education</option>
               <option value="Travel">Travel</option>
               <option value="Personal Care">Personal Care</option>
+                <option value="Pets">Pets</option>
               <option value="Paycheck / Salary">Paycheck / Salary</option>
               <option value="Other">Other</option>
             </select>
             <span class="row-count" id="rowCount">0 rows</span>
           </div>
         </div>
-
         <!-- LOG Tab -->
         <div class="tab-content active" id="tabContentLog">
           <div class="table-wrapper">
@@ -206,12 +198,10 @@
             </table>
           </div>
         </div>
-
         <!-- ANALYTICS Tab -->
         <div class="tab-content" id="tabContentAnalytics">
           <div class="analytics-layout">
             <div class="analytics-grid" id="analyticsGrid">
-
               <div class="analytics-card analytics-wide">
                 <div class="analytics-card-header">
                   <span class="analytics-card-title">CATEGORY DEEP DIVE</span>
@@ -220,7 +210,6 @@
                 <div class="analytics-chart" id="chartCategoryPicker"></div>
                 <div id="deepDiveInline"></div>
               </div>
-
               <div class="analytics-card analytics-wide">
                 <div class="analytics-card-header">
                   <span class="analytics-card-title">MONTHLY CASH FLOW</span>
@@ -228,7 +217,6 @@
                 </div>
                 <div class="analytics-chart" id="chartCashflow"></div>
               </div>
-
               <div class="analytics-card analytics-wide">
                 <div class="analytics-card-header">
                   <span class="analytics-card-title">TOP EXPENSES</span>
@@ -236,7 +224,6 @@
                 </div>
                 <div class="analytics-chart" id="chartTopExpenses"></div>
               </div>
-
               <div class="analytics-card analytics-wide">
                 <div class="analytics-card-header">
                   <span class="analytics-card-title">CATEGORY TRENDS</span>
@@ -244,22 +231,17 @@
                 </div>
                 <div class="analytics-chart" id="chartCategoryTrends"></div>
               </div>
-
             </div>
           </div>
           <div class="chart-tooltip" id="chartTooltip"></div>
         </div>
       </main>
-
     </div>
-
     <footer class="statusbar">
       <span class="status-left" id="statusMsg">READY</span>
       <span class="status-right" id="statusTime"></span>
     </footer>
-
   </div>
-
   <!-- Recurring Rule Modal -->
   <div id="recurringModal" class="modal-overlay hidden">
     <div class="modal modal-sm">
@@ -282,17 +264,18 @@
               <label for="recCategory">CAT</label>
               <select id="recCategory" required>
                 <option value="Food & Dining">Food & Dining</option>
+                <option value="Groceries">Groceries</option>
                 <option value="Transportation">Transportation</option>
                 <option value="Shopping">Shopping</option>
                 <option value="Clothes">Clothes</option>
                 <option value="House">House</option>
-                <option value="Clothes">Clothes</option>
                 <option value="Entertainment">Entertainment</option>
                 <option value="Bills & Utilities" selected>Bills & Utilities</option>
                 <option value="Health">Health</option>
                 <option value="Education">Education</option>
                 <option value="Travel">Travel</option>
                 <option value="Personal Care">Personal Care</option>
+                <option value="Pets">Pets</option>
                 <option value="Paycheck / Salary">Paycheck / Salary</option>
                 <option value="Other">Other</option>
               </select>
@@ -333,7 +316,6 @@
       </div>
     </div>
   </div>
-
   <!-- Edit Transaction Modal -->
   <div id="editModal" class="modal-overlay hidden">
     <div class="modal modal-sm">
@@ -364,17 +346,18 @@
             <label for="editCategory">CAT</label>
             <select id="editCategory" required>
               <option value="Food & Dining">Food & Dining</option>
+                <option value="Groceries">Groceries</option>
               <option value="Transportation">Transportation</option>
               <option value="Shopping">Shopping</option>
-                <option value="Clothes">Clothes</option>
-                <option value="House">House</option>
-                <option value="Clothes">Clothes</option>
+              <option value="Clothes">Clothes</option>
+              <option value="House">House</option>
               <option value="Entertainment">Entertainment</option>
               <option value="Bills & Utilities">Bills & Utilities</option>
               <option value="Health">Health</option>
               <option value="Education">Education</option>
               <option value="Travel">Travel</option>
               <option value="Personal Care">Personal Care</option>
+                <option value="Pets">Pets</option>
                 <option value="Paycheck / Salary">Paycheck / Salary</option>
               <option value="Other">Other</option>
             </select>
@@ -394,7 +377,6 @@
       </div>
     </div>
   </div>
-
   <!-- CSV Import Modal -->
   <div id="csvModal" class="modal-overlay hidden">
     <div class="modal">
@@ -402,7 +384,6 @@
         <span class="modal-title">IMPORT CSV</span>
         <button class="modal-close" id="csvModalClose">✕</button>
       </div>
-
       <!-- Step 1: Mapping -->
       <div id="csvStep1" class="modal-body">
         <div class="modal-section">
@@ -410,25 +391,21 @@
           <span class="modal-file-name" id="csvFileName">—</span>
           <span class="modal-file-meta" id="csvFileMeta"></span>
         </div>
-
         <div class="modal-section">
           <span class="modal-section-label">COLUMN MAPPING</span>
           <p class="modal-hint">Assign each CSV column to a transaction field. Columns marked "skip" will be ignored.</p>
           <div id="csvMappingTable" class="csv-mapping-table"></div>
         </div>
-
         <div class="modal-section">
           <span class="modal-section-label">UNMAPPED CATEGORIES</span>
           <p class="modal-hint">CSV values that don't match a Spending Tracker category. Assign them or they'll default to "Other".</p>
           <div id="csvCatMapping" class="csv-cat-mapping"></div>
         </div>
-
         <div class="modal-actions">
           <button class="btn-modal-secondary" id="csvCancel">CANCEL</button>
           <button class="btn-modal-primary" id="csvPreview">PREVIEW →</button>
         </div>
       </div>
-
       <!-- Step 2: Preview -->
       <div id="csvStep2" class="modal-body hidden">
         <div class="modal-section">
@@ -457,9 +434,7 @@
       </div>
     </div>
   </div>
-
   <div id="toast" class="toast"></div>
-
   <script src="app.js?v=24"></script>
 </body>
 </html>

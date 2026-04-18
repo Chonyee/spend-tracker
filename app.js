@@ -1,6 +1,7 @@
 // ========== Category Config ==========
 const CATEGORIES = {
   'Food & Dining':     { color: '#d29922' },
+  'Groceries':         { color: '#eab308' },
   'Transportation':    { color: '#58a6ff' },
   'Shopping':          { color: '#f778ba' },
   'Clothes':           { color: '#e879a8' },
@@ -11,6 +12,7 @@ const CATEGORIES = {
   'Education':         { color: '#6cb6ff' },
   'Travel':            { color: '#39d2c0' },
   'Personal Care':     { color: '#db6d28' },
+  'Pets':              { color: '#fb923c' },
   'Paycheck / Salary': { color: '#7ee787' },
   'Other':             { color: '#8b949e' },
 };
@@ -1729,7 +1731,8 @@ function fuzzyMatchCategory(input) {
   const lower = input.toLowerCase();
   // Simple keyword matching
   const keywords = {
-    'Food & Dining': ['food', 'dining', 'restaurant', 'grocery', 'groceries', 'meal', 'eat', 'coffee', 'lunch', 'dinner', 'breakfast', 'cafe'],
+    'Food & Dining': ['food', 'dining', 'restaurant', 'meal', 'eat', 'coffee', 'lunch', 'dinner', 'breakfast', 'cafe', 'takeout', 'doordash', 'ubereats'],
+    'Groceries': ['grocery', 'groceries', 'supermarket', 'costco', 'walmart', 'trader', 'whole foods', 'aldi', 'kroger', 'safeway', 'produce'],
     'Transportation': ['transport', 'gas', 'fuel', 'uber', 'lyft', 'taxi', 'car', 'auto', 'parking', 'transit', 'bus', 'train'],
     'Shopping': ['shop', 'retail', 'amazon', 'merchandise', 'purchase', 'store'],
     'Clothes': ['clothes', 'clothing', 'apparel', 'shirt', 'pants', 'shoes', 'dress', 'jacket', 'outfit', 'fashion', 'wardrobe'],
@@ -1740,6 +1743,7 @@ function fuzzyMatchCategory(input) {
     'Education': ['education', 'school', 'tuition', 'book', 'course', 'class', 'training', 'learn'],
     'Travel': ['travel', 'hotel', 'flight', 'airfare', 'vacation', 'trip', 'lodging', 'airline'],
     'Personal Care': ['personal', 'care', 'beauty', 'haircut', 'salon', 'spa', 'grooming', 'hygiene'],
+    'Pets': ['pet', 'pets', 'vet', 'veterinary', 'dog', 'cat', 'petco', 'petsmart', 'chewy', 'kibble', 'groomer', 'kennel', 'animal'],
     'Paycheck / Salary': ['paycheck', 'salary', 'wage', 'income', 'payroll', 'direct deposit', 'compensation', 'bonus'],
   };
 
